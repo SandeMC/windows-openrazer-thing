@@ -38,7 +38,24 @@ jobs:
       run: dotnet restore RazerController.sln
     
     - name: Build native DLL
-      run: msbuild native/OpenRazer.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+      run: |
+        msbuild native/OpenRazer.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m /v:minimal
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Native DLL build failed"
+          exit 1
+        }
+      shell: pwsh
+    
+    - name: Verify native DLL exists
+      run: |
+        $dllPath = "native\x64\${{ matrix.configuration }}\OpenRazer64.dll"
+        if (-not (Test-Path $dllPath)) {
+          Write-Error "Native DLL not found at: $dllPath"
+          Get-ChildItem native -Recurse -Filter "*.dll" | Format-Table FullName
+          exit 1
+        }
+        Write-Host "Native DLL found at: $dllPath"
+      shell: pwsh
     
     - name: Build .NET application
       run: dotnet build RazerController.sln -c ${{ matrix.configuration }} --no-restore
@@ -49,6 +66,7 @@ jobs:
         $dllSource = "native\x64\${{ matrix.configuration }}\$dllName"
         $dllDest = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\$dllName"
         Copy-Item $dllSource $dllDest -Force
+        Write-Host "Copied DLL from $dllSource to $dllDest"
       shell: pwsh
     
     - name: Publish application
