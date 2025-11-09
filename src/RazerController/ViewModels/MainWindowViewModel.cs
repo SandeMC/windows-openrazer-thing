@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using RazerController.Models;
@@ -23,12 +25,15 @@ public partial class MainWindowViewModel : ViewModelBase
     private string _statusMessage = "Click 'Initialize' to detect Razer devices";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PreviewColor))]
     private byte _redValue = 255;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PreviewColor))]
     private byte _greenValue = 255;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PreviewColor))]
     private byte _blueValue = 255;
 
     [ObservableProperty]
@@ -39,6 +44,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private int _pollRate = 1000;
+
+    public Color PreviewColor => Color.FromRgb(RedValue, GreenValue, BlueValue);
 
     public MainWindowViewModel()
     {
