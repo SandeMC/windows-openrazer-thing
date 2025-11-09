@@ -1,0 +1,2 @@
+# windows-openrazer-thing
+thing
