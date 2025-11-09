@@ -51,6 +51,9 @@ A modern Windows application for controlling Razer devices without Synapse, usin
 git clone https://github.com/SandeMC/windows-openrazer-thing.git
 cd windows-openrazer-thing
 
+# Check if you have all prerequisites
+.\check-prerequisites.ps1
+
 # Build the native DLL (requires Visual Studio)
 # Open native/OpenRazer.sln and build, or use MSBuild:
 msbuild native/OpenRazer.sln /p:Configuration=Release /p:Platform=x64
