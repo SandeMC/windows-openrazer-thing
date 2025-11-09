@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "pipjkq1GyjM=",
+  "dgSpecHash": "EBt+k36+eEI=",
   "success": true,
   "projectFilePath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/RazerController.Native.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/home/runner/work/windows-openrazer-thing/.codeql-scratch/dbs/csharp/working/packages/microsoft.netcore.app.ref/8.0.21/microsoft.netcore.app.ref.8.0.21.nupkg.sha512",
+    "/home/runner/work/windows-openrazer-thing/.codeql-scratch/dbs/csharp/working/packages/microsoft.aspnetcore.app.ref/8.0.21/microsoft.aspnetcore.app.ref.8.0.21.nupkg.sha512"
+  ],
   "logs": []
 }

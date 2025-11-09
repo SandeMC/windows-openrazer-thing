@@ -10,7 +10,7 @@
         "projectUniqueName": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/RazerController.Native.csproj",
         "projectName": "RazerController.Native",
         "projectPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/RazerController.Native.csproj",
-        "packagesPath": "/home/runner/.nuget/packages/",
+        "packagesPath": "/home/runner/work/windows-openrazer-thing/.codeql-scratch/dbs/csharp/working/packages",
         "outputPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
@@ -54,6 +54,16 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[8.0.21, 8.0.21]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[8.0.21, 8.0.21]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
@@ -69,7 +79,7 @@
         "projectUniqueName": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/RazerController.csproj",
         "projectName": "RazerController",
         "projectPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/RazerController.csproj",
-        "packagesPath": "/home/runner/.nuget/packages/",
+        "packagesPath": "/home/runner/work/windows-openrazer-thing/.codeql-scratch/dbs/csharp/working/packages",
         "outputPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
@@ -116,8 +126,6 @@
               "version": "[11.3.8, )"
             },
             "Avalonia.Diagnostics": {
-              "include": "None",
-              "suppressParent": "All",
               "target": "Package",
               "version": "[11.3.8, )"
             },
@@ -145,6 +153,20 @@
           ],
           "assetTargetFallback": true,
           "warn": true,
+          "downloadDependencies": [
+            {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[9.0.10, 9.0.10]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.linux-x64",
+              "version": "[9.0.10, 9.0.10]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Ref",
+              "version": "[9.0.10, 9.0.10]"
+            }
+          ],
           "frameworkReferences": {
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
