@@ -48,9 +48,10 @@ jobs:
     
     - name: Verify native DLL exists
       run: |
-        $dllPath = "native\x64\${{ matrix.configuration }}\OpenRazer64.dll"
+        $dllPath = "native\OpenRazer64.dll"
         if (-not (Test-Path $dllPath)) {
           Write-Error "Native DLL not found at: $dllPath"
+          Write-Host "Searching for DLL files in native directory:"
           Get-ChildItem native -Recurse -Filter "*.dll" | Format-Table FullName
           exit 1
         }
@@ -63,7 +64,7 @@ jobs:
     - name: Copy native DLL to output
       run: |
         $dllName = "OpenRazer64.dll"
-        $dllSource = "native\x64\${{ matrix.configuration }}\$dllName"
+        $dllSource = "native\$dllName"
         $dllDest = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\$dllName"
         Copy-Item $dllSource $dllDest -Force
         Write-Host "Copied DLL from $dllSource to $dllDest"
@@ -82,9 +83,10 @@ jobs:
     - name: Copy native DLL to publish folder
       run: |
         $dllName = "OpenRazer64.dll"
-        $dllSource = "native\x64\${{ matrix.configuration }}\$dllName"
+        $dllSource = "native\$dllName"
         $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\win-x64\publish"
         Copy-Item $dllSource "$publishDir\$dllName" -Force
+        Write-Host "Copied DLL to publish folder: $publishDir\$dllName"
       shell: pwsh
     
     - name: Upload artifact
