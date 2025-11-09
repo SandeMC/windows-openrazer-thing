@@ -42,7 +42,7 @@ A modern Windows application for controlling Razer devices without Synapse, usin
 1. Open `native/OpenRazer.sln` in Visual Studio
 2. Select your target platform (x64 or x86)
 3. Build the solution (Release configuration)
-4. The DLL will be in `native/x64/Release/OpenRazer64.dll` or `native/Release/OpenRazer.dll`
+4. The DLL will be output to `native/OpenRazer64.dll` (for x64) or `native/OpenRazer.dll` (for x86)
 
 #### Building the Application
 

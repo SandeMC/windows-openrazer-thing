@@ -60,7 +60,7 @@ try {
 
     # Copy Native DLL to output
     $dllName = if ($Platform -eq "x64") { "OpenRazer64.dll" } else { "OpenRazer.dll" }
-    $dllSource = "native\$Platform\$Configuration\$dllName"
+    $dllSource = "native\$dllName"
     $dllDest = "src\RazerController\bin\$Configuration\net9.0\$dllName"
     
     if (Test-Path $dllSource) {
@@ -69,6 +69,10 @@ try {
         Write-Host "DLL copied successfully!" -ForegroundColor Green
     } else {
         Write-Host "WARNING: Native DLL not found at $dllSource" -ForegroundColor Yellow
+        Write-Host "Checking for DLL in alternate locations..."
+        Get-ChildItem native -Recurse -Filter "*.dll" -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "  Found: $($_.FullName)"
+        }
         Write-Host "The application may not work without the native DLL." -ForegroundColor Yellow
     }
     Write-Host ""
