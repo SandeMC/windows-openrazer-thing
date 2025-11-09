@@ -1,0 +1,91 @@
+name: Build Razer Controller
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    strategy:
+      matrix:
+        configuration: [Release]
+        platform: [x64]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Restore .NET dependencies
+      run: dotnet restore RazerController.sln
+    
+    - name: Build native DLL
+      run: msbuild native/OpenRazer.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+    
+    - name: Build .NET application
+      run: dotnet build RazerController.sln -c ${{ matrix.configuration }} --no-restore
+    
+    - name: Copy native DLL to output
+      run: |
+        $dllName = "OpenRazer64.dll"
+        $dllSource = "native\x64\${{ matrix.configuration }}\$dllName"
+        $dllDest = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\$dllName"
+        Copy-Item $dllSource $dllDest -Force
+      shell: pwsh
+    
+    - name: Publish application
+      run: |
+        dotnet publish src/RazerController/RazerController.csproj `
+          -c ${{ matrix.configuration }} `
+          -r win-${{ matrix.platform }} `
+          --self-contained `
+          -p:PublishSingleFile=false `
+          -p:IncludeNativeLibrariesForSelfExtract=true
+      shell: pwsh
+    
+    - name: Copy native DLL to publish folder
+      run: |
+        $dllName = "OpenRazer64.dll"
+        $dllSource = "native\x64\${{ matrix.configuration }}\$dllName"
+        $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\win-x64\publish"
+        Copy-Item $dllSource "$publishDir\$dllName" -Force
+      shell: pwsh
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: RazerController-${{ matrix.platform }}-${{ matrix.configuration }}
+        path: src/RazerController/bin/${{ matrix.configuration }}/net9.0/win-x64/publish/
+    
+    - name: Create release archive
+      if: github.event_name == 'release'
+      run: |
+        $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\win-x64\publish"
+        Compress-Archive -Path "$publishDir\*" -DestinationPath "RazerController-win-${{ matrix.platform }}.zip"
+      shell: pwsh
+    
+    - name: Upload release asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./RazerController-win-${{ matrix.platform }}.zip
+        asset_name: RazerController-win-${{ matrix.platform }}.zip
+        asset_content_type: application/zip
