@@ -192,12 +192,12 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project uses the OpenRazer Win32 driver, which is based on the OpenRazer Linux driver. Please refer to the original projects for licensing information:
 
-- [OpenRazer Win32](https://github.com/CalcProgrammer1/openrazer-win32)
+- [OpenRazer Win32](https://github.com/tpoechtrager/openrazer-win32)
 - [OpenRazer](https://github.com/openrazer/openrazer)
 
 ## Credits
 
-- **OpenRazer Win32**: CalcProgrammer1
+- **OpenRazer Win32**: tpoechtrager (based on CalcProgrammer1's original work)
 - **OpenRazer**: The OpenRazer Team
 - **UI Framework**: Avalonia Team
 - **Application**: SandeMC and contributors
@@ -206,5 +206,6 @@ This project uses the OpenRazer Win32 driver, which is based on the OpenRazer Li
 
 This project would not be possible without:
 - The OpenRazer project for reverse-engineering Razer protocols
-- CalcProgrammer1's Windows port of OpenRazer
+- CalcProgrammer1's original Windows port of OpenRazer
+- tpoechtrager's maintained fork of openrazer-win32
 - The Avalonia UI framework for cross-platform UI capabilities
