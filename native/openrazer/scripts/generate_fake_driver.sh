@@ -1,21 +1,55 @@
 #!/bin/bash
 
 declare -A files_metadata=(
+    ["backlight_led_brightness"]="rw;0"
     ["backlight_led_state"]="rw;0"
+    ["backlight_matrix_effect_breath"]="w;"
+    ["backlight_matrix_effect_none"]="w;"
+    ["backlight_matrix_effect_on"]="w;"
+    ["backlight_matrix_effect_reactive"]="w;"
+    ["backlight_matrix_effect_spectrum"]="w;"
+    ["backlight_matrix_effect_static"]="w;"
+    ["backlight_matrix_effect_wave"]="w;"
     ["charge_colour"]="w;"
     ["charge_effect"]="w;"
     ["charge_level"]="r;255"
     ["charge_low_threshold"]="rw;38"
     ["charge_status"]="r;1"
+    ["charging_led_brightness"]="rw;0"
+    ["charging_matrix_effect_breath"]="w;"
+    ["charging_matrix_effect_none"]="w;"
+    ["charging_matrix_effect_spectrum"]="w;"
+    ["charging_matrix_effect_static"]="w;"
+    ["charging_matrix_effect_wave"]="w;"
     ["device_idle_time"]="rw;600"
+    ["device_mode"]="rw;0x0000"
     ["device_serial"]="r;XX0000000000" # default value will get overwritten
     ["device_type"]="r;%(name)s"
     ["dpi"]="rw;800:800"
     ["dpi_stages"]="rw;0x010320032005dc05dc"
+    ["fast_charging_led_brightness"]="rw;0"
+    ["fast_charging_matrix_effect_breath"]="w;"
+    ["fast_charging_matrix_effect_none"]="w;"
+    ["fast_charging_matrix_effect_spectrum"]="w;"
+    ["fast_charging_matrix_effect_static"]="w;"
+    ["fast_charging_matrix_effect_wave"]="w;"
     ["firmware_version"]="r;v1.0"
+    ["fully_charged_led_brightness"]="rw;0"
+    ["fully_charged_matrix_effect_breath"]="w;"
+    ["fully_charged_matrix_effect_none"]="w;"
+    ["fully_charged_matrix_effect_spectrum"]="w;"
+    ["fully_charged_matrix_effect_static"]="w;"
+    ["fully_charged_matrix_effect_wave"]="w;"
     ["game_led_state"]="rw;0"
+    ["hyperpolling_wireless_dongle_indicator_led_mode"]="w;"
+    ["hyperpolling_wireless_dongle_pair"]="w;"
+    ["hyperpolling_wireless_dongle_unpair"]="w;"
+    ["keyswitch_optimization"]="rw;0"
     ["is_mug_present"]="r;0"
     ["kbd_layout"]="r;01"
+    ["key_alt_f4"]="rw;0x00"
+    ["key_alt_tab"]="rw;0x00"
+    ["key_super"]="rw;0x00"
     ["left_led_brightness"]="rw;0"
     ["left_matrix_effect_breath"]="w;"
     ["left_matrix_effect_none"]="w;"
@@ -25,10 +59,11 @@ declare -A files_metadata=(
     ["left_matrix_effect_wave"]="w;"
     ["logo_led_brightness"]="rw;0"
     ["logo_led_effect"]="rw;0"
-    ["logo_led_rgb"]="rw;0xFF00FF"
     ["logo_led_state"]="rw;0"
+    ["logo_matrix_effect_blinking"]="w;"
     ["logo_matrix_effect_breath"]="w;"
     ["logo_matrix_effect_none"]="w;"
+    ["logo_matrix_effect_on"]="w;"
     ["logo_matrix_effect_reactive"]="w;"
     ["logo_matrix_effect_spectrum"]="w;"
     ["logo_matrix_effect_static"]="w;"
@@ -48,7 +83,7 @@ declare -A files_metadata=(
     ["matrix_effect_starlight"]="w;"
     ["matrix_effect_static"]="w;"
     ["matrix_effect_wave"]="w;"
-    ["matrix_effect_wave"]="w;"
+    ["matrix_effect_wheel"]="w;"
     ["matrix_reactive_trigger"]="w;"
     ["poll_rate"]="rw;500"
     ["profile_led_blue"]="rw;0"
@@ -63,17 +98,34 @@ declare -A files_metadata=(
     ["right_matrix_effect_wave"]="w;"
     ["scroll_led_brightness"]="rw;0"
     ["scroll_led_effect"]="rw;0"
-    ["scroll_led_rgb"]="rw;0xFF00FF"
     ["scroll_led_state"]="rw;0"
+    ["scroll_matrix_effect_blinking"]="w;"
     ["scroll_matrix_effect_breath"]="w;"
     ["scroll_matrix_effect_none"]="w;"
+    ["scroll_matrix_effect_on"]="w;"
     ["scroll_matrix_effect_reactive"]="w;"
     ["scroll_matrix_effect_spectrum"]="w;"
     ["scroll_matrix_effect_static"]="w;"
     ["scroll_matrix_effect_wave"]="w;"
+    ["scroll_mode"]="rw;0"
+    ["scroll_acceleration"]="rw;0"
+    ["scroll_smart_reel"]="rw;0"
     ["tilt_hwheel"]="rw;0"
     ["tilt_repeat"]="rw;0"
     ["tilt_repeat_delay"]="rw;0"
+    ["reset_channels"]="w;1"
+    ["channel1_size"]="rw;8"
+    ["channel2_size"]="rw;8"
+    ["channel3_size"]="rw;8"
+    ["channel4_size"]="rw;8"
+    ["channel5_size"]="rw;8"
+    ["channel6_size"]="rw;8"
+    ["channel1_led_brightness"]="rw;0"
+    ["channel2_led_brightness"]="rw;0"
+    ["channel3_led_brightness"]="rw;0"
+    ["channel4_led_brightness"]="rw;0"
+    ["channel5_led_brightness"]="rw;0"
+    ["channel6_led_brightness"]="rw;0"
     ["version"]="r;1.0.0"
 )
 
@@ -90,7 +142,7 @@ byte_dpi_devices=(
 
 
 get_attr_from_create_device_file() {
-    sed -n 's/[[:space:]]\+CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_\([[:lower:]_]\+\));.*/\1/p'
+    sed -n 's/[[:space:]]\+CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_\([[:lower:][:digit:]_]\+\));.*/\1/p'
 }
 
 driver=$1
@@ -121,7 +173,7 @@ while IFS= read -r device_raw; do
     device_pid=$(echo "$device_raw" | cut -d' ' -f2 | sed 's/0x//')
 
     devicetype_line=$(echo "$devicetype_lines" | sed -n '/case '$device':/,/break;/p' | grep "device_type = ")
-    device_name=$(echo "$devicetype_line" | sed 's/[[:space:]]\+device_type = "\(.\+\)\\n";.*/\1/')
+    device_name=$(echo "$devicetype_line" | sed 's/[[:space:]]\+device_type = "\(.\+\)\\n";.*/\1/' | sed 's/%/%%/g')
 
     #echo "-----------------------------" >&2
     echo "Generating for $device_name (1532:$device_pid) ..." >&2
@@ -137,23 +189,31 @@ while IFS= read -r device_raw; do
         exit 1
     fi
 
-    device_name_simple=$(echo "$device_name" | tr -d ' ' | tr -d '(' | tr -d ')' | tr '[:upper:]' '[:lower:]')
+    device_name_simple=$(echo "$device_name" | tr -d ' ' | tr -d '(' | tr -d ')' | sed 's/%%/pct/g' | tr '[:upper:]' '[:lower:]')
     filename="./pylib/openrazer/_fake_driver/$device_name_simple.cfg"
 
-    # There are two "Razer Kraken 7.1"
-    if [ "$device_pid" = "0506" ]; then
+    # There are some devices that have multiple PID for the same codename.
+    # Why exactly I'm not sure, but we need to add a suffix to the fake driver file then.
+    if [ "$device_pid" = "0506" ] || # Razer Kraken 7.1
+        [ "$device_pid" = "028F" ] || # Razer Ornata V3
+        [ "$device_pid" = "02A2" ] || # Razer Ornata V3 X
+        [ "$device_pid" = "00C2" ] || # Razer DeathAdder V3 Pro (Wired)
+        [ "$device_pid" = "00C3" ]; then # Razer DeathAdder V3 Pro (Wireless)
         filename=${filename%.cfg}_2.cfg
     fi
-
 
     if [ -f "$filename" ]; then
         echo "Error: File $filename already exists!"
         exit 1
     fi
 
-    echo "[device]" > "$filename"
-    echo "dir_name = 0003:1532:$device_pid.0001" >> "$filename"
-    echo "name = $device_name" >> "$filename"
+    cat << EOF > "$filename"
+# DO NOT EDIT THIS FILE!
+# You can regenerate all fake driver files with ./scripts/generate_all_fake_drivers.sh -f
+[device]
+dir_name = 0003:1532:$device_pid.0001
+name = $device_name
+EOF
     # echo "event = TODO" >> "$filename"
     echo -n "files = " >> "$filename"
 
@@ -164,8 +224,7 @@ while IFS= read -r device_raw; do
         # "": sometimes we get empty line in here
         # "test": not used by daemon
         # "fn_toggle": not used by daemon
-        # "device_mode": daemon writes binary and reads ascii which can't be handled easily
-        [[ "$attr" = "" || "$attr" = "test" || "$attr" = "fn_toggle" || "$attr" = "device_mode" ]] && continue
+        [[ "$attr" = "" || "$attr" = "test" || "$attr" = "fn_toggle" ]] && continue
 
         metadata="${files_metadata[$attr]}"
         if [ -z "$metadata" ]; then

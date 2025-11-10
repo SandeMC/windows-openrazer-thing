@@ -1,3 +1,105 @@
+openrazer (3.10.3) noble; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.10.3
+
+ -- Luca Weiss <luca@lucaweiss.eu>  Wed, 07 May 2025 21:00:47 +0200
+
+openrazer (3.10.2) noble; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.10.2
+
+ -- Luca Weiss <luca@lucaweiss.eu>  Sat, 12 Apr 2025 10:50:41 +0200
+
+openrazer (3.10.1) noble; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.10.1
+
+ -- Luca Weiss <luca@lucaweiss.eu>  Sat, 15 Mar 2025 12:06:17 +0100
+
+openrazer (3.10.0) noble; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.10.0
+
+ -- Luca Weiss <luca@lucaweiss.eu>  Thu, 20 Feb 2025 17:18:46 +0000
+
+openrazer (3.9.0) noble; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.9.0
+
+ -- Luca Weiss <luca@lucaweiss.eu>  Sun, 06 Oct 2024 11:40:51 +0200
+
+openrazer (3.8.0) jammy; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.8.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sun, 14 Apr 2024 11:34:24 +0200
+
+openrazer (3.7.0) jammy; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.7.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Wed, 01 Nov 2023 20:47:56 +0200
+
+openrazer (3.6.1) jammy; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.6.1
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sat, 13 May 2023 17:02:29 +0200
+
+openrazer (3.6.0) jammy; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.6.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sun, 30 Apr 2023 14:23:43 +0200
+
+openrazer (3.5.1) jammy; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.5.1
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sun, 04 Dec 2022 12:48:59 +0100
+
+openrazer (3.5.0) jammy; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.5.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sun, 20 Nov 2022 15:01:08 +0100
+
+openrazer (3.4.0) jammy; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.4.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sun, 31 Jul 2022 18:00:44 +0200
+
+openrazer (3.3.0) focal; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.3.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sat, 09 Apr 2022 15:57:47 +0200
+
+openrazer (3.2.0) focal; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.2.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sun, 12 Dec 2021 15:58:06 +0100
+
+openrazer (3.1.0) focal; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.1.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sun, 15 Aug 2021 11:42:45 +0200
+
+openrazer (3.0.1) bionic; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.0.1
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sat, 10 Apr 2021 11:20:13 +0200
+
+openrazer (3.0.0) bionic; urgency=high
+
+  * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v3.0.0
+
+ -- Luca Weiss <luca@z3ntu.xyz>  Sun, 21 Mar 2021 17:26:04 +0100
+
 openrazer (2.9.0) bionic; urgency=high
 
   * Changelog available at https://github.com/openrazer/openrazer/releases/tag/v2.9.0

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 BlackWidow Ultimate 2013 effects
 """
@@ -5,7 +7,7 @@ from openrazer_daemon.dbus_services import endpoint
 
 
 @endpoint('razer.device.lighting.bw2013', 'setPulsate')
-def bw_set_pulsate(self):
+def bw_set_pulsate(self):  # TODO: Replace by set*BreathMono
     """
     Set pulsate mode
     """
@@ -24,7 +26,7 @@ def bw_set_pulsate(self):
 
 
 @endpoint('razer.device.lighting.bw2013', 'setStatic')
-def bw_set_static(self):
+def bw_set_static(self):  # TODO: Replace by set*On
     """
     Set static mode
     """

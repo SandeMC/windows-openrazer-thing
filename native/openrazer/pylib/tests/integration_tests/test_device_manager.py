@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 import multiprocessing
 import os
@@ -158,6 +159,17 @@ class DeviceManagerTest(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             device.fx.wave('lalala')
+
+    def test_device_keyboard_effect_wheel(self):
+        device = self.device_manager.devices[0]
+
+        device.fx.wheel(openrazer.client.constants.WHEEL_LEFT)
+        self.assertEqual(self._bw_chroma.get('matrix_effect_wheel'), str(openrazer.client.constants.WHEEL_LEFT))
+        device.fx.wheel(openrazer.client.constants.WHEEL_RIGHT)
+        self.assertEqual(self._bw_chroma.get('matrix_effect_wheel'), str(openrazer.client.constants.WHEEL_RIGHT))
+
+        with self.assertRaises(ValueError):
+            device.fx.wheel('lalala')
 
     def test_device_keyboard_effect_static(self):
         device = self.device_manager.devices[0]

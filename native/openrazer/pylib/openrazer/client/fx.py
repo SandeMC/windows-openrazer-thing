@@ -1,6 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 import numpy as _np
 import dbus as _dbus
-#from openrazer.client.constants import WAVE_LEFT, WAVE_RIGHT, REACTIVE_500MS, REACTIVE_1000MS, REACTIVE_1500MS, REACTIVE_2000MS
+# from openrazer.client.constants import WAVE_LEFT, WAVE_RIGHT, REACTIVE_500MS, REACTIVE_1000MS, REACTIVE_1500MS, REACTIVE_2000MS
 from openrazer.client import constants as c
 
 # TODO logging.debug if value out of range v1.1
@@ -50,7 +52,7 @@ class BaseRazerFX(object):
 
 class RazerFX(BaseRazerFX):
     def __init__(self, serial: str, capabilities: dict, daemon_dbus=None, matrix_dims=(-1, -1)):
-        super(RazerFX, self).__init__(serial, capabilities, daemon_dbus)
+        super().__init__(serial, capabilities, daemon_dbus)
 
         self._lighting_dbus = _dbus.Interface(self._dbus, "razer.device.lighting.chroma")
 
@@ -151,6 +153,27 @@ class RazerFX(BaseRazerFX):
 
         if self.has('wave'):
             self._lighting_dbus.setWave(direction)
+
+            return True
+        return False
+
+    def wheel(self, direction: int) -> bool:
+        """
+        Wheel effect
+
+        :param direction: Wheel direction either WHEEL_RIGHT or WHEEL_LEFT
+        :type direction: int
+
+        :return: True if success, False otherwise
+        :rtype: bool
+
+        :raises ValueError: If direction is invalid
+        """
+        if direction not in (c.WHEEL_LEFT, c.WHEEL_RIGHT):
+            raise ValueError("Direction must be WHEEL_RIGHT (0x01) or WHEEL_LEFT (0x02)")
+
+        if self.has('wheel'):
+            self._lighting_dbus.setWheel(direction)
 
             return True
         return False
@@ -591,7 +614,7 @@ class RazerFX(BaseRazerFX):
 
 class RazerAdvancedFX(BaseRazerFX):
     def __init__(self, serial: str, capabilities: dict, daemon_dbus=None, matrix_dims=(-1, -1)):
-        super(RazerAdvancedFX, self).__init__(serial, capabilities, daemon_dbus)
+        super().__init__(serial, capabilities, daemon_dbus)
 
         # Only init'd when there's a matrix
         self._capabilities = capabilities
@@ -661,7 +684,7 @@ class RazerAdvancedFX(BaseRazerFX):
 
 class SingleLed(BaseRazerFX):
     def __init__(self, serial: str, capabilities: dict, daemon_dbus=None, led_name='logo'):
-        super(SingleLed, self).__init__(serial, capabilities, daemon_dbus)
+        super().__init__(serial, capabilities, daemon_dbus)
 
         self._led_name = led_name
         self._lighting_dbus = _dbus.Interface(self._dbus, "razer.device.lighting.{0}".format(led_name))
@@ -670,7 +693,7 @@ class SingleLed(BaseRazerFX):
         return self.has('{0}_{1}'.format(self._led_name, item))
 
     def _getattr(self, name):
-        attr = name.replace('#', self._led_name.title())
+        attr = name.replace('#', self._led_name.title().replace("_", ""))
         return getattr(self._lighting_dbus, attr, None)
 
     @property
@@ -816,6 +839,13 @@ class SingleLed(BaseRazerFX):
     def none(self) -> bool:
         if self._shas('none'):
             self._getattr('set#None')()
+
+            return True
+        return False
+
+    def on(self) -> bool:
+        if self._shas('on'):
+            self._getattr('set#On')()
 
             return True
         return False
@@ -972,10 +1002,26 @@ class SingleLed(BaseRazerFX):
             return True
         return False
 
+    def breath_mono(self) -> bool:
+        """
+        Breath effect - mono colour
+
+        :return: True if success, False otherwise
+        :rtype: bool
+
+        :raises ValueError: If parameters are invalid
+        """
+
+        if self._shas('breath_mono'):
+            self._getattr('set#BreathMono')()
+
+            return True
+        return False
+
 
 class MiscLighting(BaseRazerFX):
     def __init__(self, serial: str, capabilities: dict, daemon_dbus=None):
-        super(MiscLighting, self).__init__(serial, capabilities, daemon_dbus)
+        super().__init__(serial, capabilities, daemon_dbus)
 
         self._lighting_dbus = _dbus.Interface(self._dbus, "razer.device.lighting.logo")
 
@@ -999,6 +1045,21 @@ class MiscLighting(BaseRazerFX):
         else:
             self._right = None
 
+        if self.has('charging'):
+            self._charging = SingleLed(serial, capabilities, daemon_dbus, 'charging')
+        else:
+            self._charging = None
+
+        if self.has('fast_charging'):
+            self._fast_charging = SingleLed(serial, capabilities, daemon_dbus, 'fast_charging')
+        else:
+            self._fast_charging = None
+
+        if self.has('fully_charged'):
+            self._fully_charged = SingleLed(serial, capabilities, daemon_dbus, 'fully_charged')
+        else:
+            self._fully_charged = None
+
         if self.has('backlight'):
             self._backlight = SingleLed(serial, capabilities, daemon_dbus, 'backlight')
         else:
@@ -1019,6 +1080,18 @@ class MiscLighting(BaseRazerFX):
     @property
     def right(self):
         return self._right
+
+    @property
+    def charging(self):
+        return self._charging
+
+    @property
+    def fast_charging(self):
+        return self._fast_charging
+
+    @property
+    def fully_charged(self):
+        return self._fully_charged
 
     @property
     def backlight(self):

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 Mousemat class
 """
@@ -29,7 +31,7 @@ class RazerFireflyV2(__RazerDeviceBrightnessSuspend):
     MATRIX_DIMS = [1, 19]
     METHODS = ['get_device_type_mousemat', 'set_wave_effect', 'set_static_effect', 'set_spectrum_effect',
                'set_none_effect', 'set_breath_random_effect', 'set_breath_single_effect', 'set_breath_dual_effect',
-               'set_custom_effect', 'set_key_row', 'trigger_reactive_effect']
+               'set_custom_effect', 'set_key_row', 'set_reactive_effect', 'trigger_reactive_effect']
 
     DEVICE_IMAGE = "https://assets.razerzone.com/eeimages/support/products/1594/1594_firefly_v2.png"
 
@@ -43,7 +45,8 @@ class RazerFireflyHyperflux(__RazerDeviceBrightnessSuspend):
     HAS_MATRIX = True
     MATRIX_DIMS = [1, 17]
     METHODS = ['get_device_type_mousemat', 'set_static_effect', 'set_spectrum_effect', 'set_key_row', 'set_custom_effect',
-               'set_none_effect', 'set_breath_random_effect', 'set_breath_single_effect', 'set_breath_dual_effect']
+               'set_none_effect', 'set_breath_random_effect', 'set_breath_single_effect', 'set_breath_dual_effect',
+               'set_reactive_effect', 'trigger_reactive_effect']
 
     DEVICE_IMAGE = "https://assets.razerzone.com/eeimages/support/products/594/594_firefly_500x500.png"
 
@@ -58,7 +61,7 @@ class RazerGoliathus(__RazerDeviceBrightnessSuspend):
     MATRIX_DIMS = [1, 1]
     METHODS = ['get_device_type_mousemat', 'set_static_effect', 'set_spectrum_effect',
                'set_none_effect', 'set_breath_random_effect', 'set_breath_single_effect', 'set_breath_dual_effect',
-               'set_custom_effect', 'set_key_row']
+               'set_custom_effect', 'set_key_row', 'set_reactive_effect', 'trigger_reactive_effect']
 
     DEVICE_IMAGE = "https://assets.razerzone.com/eeimages/support/products/1394/1394_goliathus_chroma.png"
 
@@ -73,6 +76,36 @@ class RazerGoliathusExtended(__RazerDeviceBrightnessSuspend):
     MATRIX_DIMS = [1, 1]
     METHODS = ['get_device_type_mousemat', 'set_static_effect', 'set_spectrum_effect',
                'set_none_effect', 'set_breath_random_effect', 'set_breath_single_effect', 'set_breath_dual_effect',
-               'set_custom_effect', 'set_key_row']
+               'set_custom_effect', 'set_key_row', 'set_reactive_effect', 'trigger_reactive_effect']
 
     DEVICE_IMAGE = "https://assets.razerzone.com/eeimages/support/products/1395/1395_goliathusextended.png"
+
+
+class RazerGoliathusChroma3XL(__RazerDeviceBrightnessSuspend):
+    """
+    Class for the Razer Goliathus Chroma 3XL
+    """
+    USB_VID = 0x1532
+    USB_PID = 0x0C06
+    HAS_MATRIX = True
+    MATRIX_DIMS = [1, 1]
+    METHODS = ['get_device_type_mousemat', 'set_static_effect', 'set_spectrum_effect',
+               'set_none_effect', 'set_breath_random_effect', 'set_breath_single_effect', 'set_breath_dual_effect',
+               'set_custom_effect', 'set_key_row', 'set_reactive_effect', 'trigger_reactive_effect']
+
+    DEVICE_IMAGE = "https://assets.razerzone.com/eeimages/support/products/1395/1395_goliathusextended.png"
+
+
+class RazerStriderChroma(__RazerDeviceBrightnessSuspend):
+    """
+    Class for the Razer Strider Chroma
+    """
+    USB_VID = 0x1532
+    USB_PID = 0x0C05
+    HAS_MATRIX = True
+    MATRIX_DIMS = [1, 19]
+    METHODS = ['get_device_type_mousemat', 'set_wave_effect', 'set_static_effect', 'set_spectrum_effect',
+               'set_none_effect', 'set_breath_random_effect', 'set_breath_single_effect', 'set_breath_dual_effect',
+               'set_custom_effect', 'set_key_row', 'set_reactive_effect', 'trigger_reactive_effect']
+
+    DEVICE_IMAGE = "https://assets2.razerzone.com/images/pnx.assets/73158705dfbee8e688bab3c7ae99c6d3/razer-strider-chroma-extended-size-1920x700.webp"
