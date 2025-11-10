@@ -68,8 +68,8 @@ public static class OpenRazerNative
 [StructLayout(LayoutKind.Sequential)]
 public struct Device
 {
-    public IntPtr attr_list;
     public int attr_count;
+    public IntPtr attr_list;
 }
 
 [StructLayout(LayoutKind.Sequential)]
