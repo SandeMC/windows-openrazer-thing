@@ -41,7 +41,7 @@ public class TrayIconService
 
             _trayIcon = new TrayIcon
             {
-                Icon = new WindowIcon("/Assets/avalonia-logo.ico"),
+                Icon = new WindowIcon("avares://RazerController/Assets/avalonia-logo.ico"),
                 ToolTipText = "Razer Controller"
             };
             Logger.Debug("TrayIcon object created");
