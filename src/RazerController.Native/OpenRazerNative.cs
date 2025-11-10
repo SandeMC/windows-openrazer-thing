@@ -65,17 +65,25 @@ public static class OpenRazerNative
     }
 }
 
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Explicit, Size = 568)]
 public struct Device
 {
+    [FieldOffset(0)]
     public IntPtr parent;
+    [FieldOffset(8)]
     public IntPtr p;
+    [FieldOffset(16)]
     public IntPtr init_name;
+    [FieldOffset(24)]
     public IntPtr bus;
+    [FieldOffset(32)]
     public IntPtr driver_data;
+    [FieldOffset(40)]
     public uint attr_count;
+    [FieldOffset(48)]
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
     public IntPtr[] attr_list;
+    [FieldOffset(560)]
     public IntPtr parent_usb_interface;
 }
 
