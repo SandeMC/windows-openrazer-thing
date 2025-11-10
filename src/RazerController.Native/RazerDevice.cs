@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using NLog;
 
 namespace RazerController.Native;
 
@@ -13,6 +14,7 @@ public enum RazerDeviceType
 
 public class RazerDevice
 {
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly IntPtr _devicePtr;
     private readonly Device _device;
     private readonly Dictionary<string, DeviceAttribute> _attributes;
@@ -24,20 +26,25 @@ public class RazerDevice
 
     internal RazerDevice(IntPtr devicePtr, RazerDeviceType deviceType)
     {
+        Logger.Debug($"Creating {deviceType} device from pointer {devicePtr:X}");
         _devicePtr = devicePtr;
         DeviceType = deviceType;
         
         try
         {
             _device = Marshal.PtrToStructure<Device>(devicePtr);
+            Logger.Debug($"Device structure marshalled successfully. attr_count={_device.attr_count}, attr_list null={_device.attr_list == null}");
         }
         catch (Exception ex)
         {
+            Logger.Error(ex, $"Failed to marshal Device structure from pointer {devicePtr:X}");
             throw new InvalidOperationException($"Failed to marshal Device structure from pointer {devicePtr:X}", ex);
         }
         
         _attributes = LoadAttributes();
+        Logger.Debug($"Loaded {_attributes.Count} attributes");
         LoadDeviceInfo();
+        Logger.Debug($"Device info loaded: Type={DeviceTypeName}, Serial={SerialNumber}");
     }
 
     private Dictionary<string, DeviceAttribute> LoadAttributes()
@@ -47,11 +54,13 @@ public class RazerDevice
         // Check if attr_list array is null
         if (_device.attr_list == null)
         {
+            Logger.Warn("attr_list is null, returning empty attributes dictionary");
             return attributes;
         }
         
         // Ensure we don't go beyond array bounds
         int count = (int)Math.Min(_device.attr_count, (uint)_device.attr_list.Length);
+        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, array length={_device.attr_list.Length}, processing {count} attributes");
         
         for (int i = 0; i < count; i++)
         {
@@ -66,13 +75,14 @@ public class RazerDevice
                         string? name = Marshal.PtrToStringAnsi(attr.name);
                         if (name != null)
                         {
+                            Logger.Trace($"Loaded attribute: {name}");
                             attributes[name] = attr;
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Skip invalid attribute pointers
+                    Logger.Warn(ex, $"Failed to load attribute at index {i}, pointer {attrPtr:X}. Skipping.");
                     continue;
                 }
             }
