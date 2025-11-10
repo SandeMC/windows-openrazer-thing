@@ -68,8 +68,14 @@ public static class OpenRazerNative
 [StructLayout(LayoutKind.Sequential)]
 public struct Device
 {
-    public int attr_count;
-    public IntPtr attr_list;
+    public IntPtr parent;           // struct device* parent
+    public IntPtr p;                // void* p
+    public IntPtr init_name;        // const char* init_name
+    public IntPtr bus;              // struct bus_type* bus
+    public IntPtr driver_data;      // void* driver_data
+    public uint attr_count;         // unsigned int attr_count
+    public IntPtr attr_list;        // struct device_attribute* attr_list[64] - pointer to first element
+    public IntPtr parent_usb_interface; // struct usb_interface* parent_usb_interface
 }
 
 [StructLayout(LayoutKind.Sequential)]
