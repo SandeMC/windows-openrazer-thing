@@ -74,7 +74,8 @@ public struct Device
     public IntPtr bus;              // struct bus_type* bus
     public IntPtr driver_data;      // void* driver_data
     public uint attr_count;         // unsigned int attr_count
-    public IntPtr attr_list;        // struct device_attribute* attr_list[64] - pointer to first element
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+    public IntPtr[] attr_list;      // struct device_attribute* attr_list[64]
     public IntPtr parent_usb_interface; // struct usb_interface* parent_usb_interface
 }
 

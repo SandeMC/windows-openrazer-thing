@@ -61,15 +61,21 @@ public class RazerDevice
         // The native attr_list array has a maximum size of 64 elements
         const int MAX_ATTR_LIST_SIZE = 64;
         int actualCount = Math.Min((int)_device.attr_count, MAX_ATTR_LIST_SIZE);
-        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, attr_list pointer={_device.attr_list:X}, reading {actualCount} attributes");
+        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, attr_list array length={_device.attr_list?.Length ?? 0}, reading {actualCount} attributes");
+        
+        if (_device.attr_list == null)
+        {
+            Logger.Warn("attr_list array is null");
+            return;
+        }
         
         for (int i = 0; i < actualCount; i++)
         {
             try
             {
                 Logger.Trace($"Reading attribute pointer at index {i}");
-                // Read pointer from the array of pointers
-                IntPtr attrPtr = Marshal.ReadIntPtr(_device.attr_list, i * IntPtr.Size);
+                // Access the pointer directly from the array
+                IntPtr attrPtr = _device.attr_list[i];
                 Logger.Trace($"Attribute {i}: pointer = {attrPtr:X}");
                 
                 if (attrPtr != IntPtr.Zero)
