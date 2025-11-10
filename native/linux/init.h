@@ -1,12 +1,6 @@
 #ifndef INIT_H_
 #define INIT_H_
 
-#define KERN_WARNING
-#define KERN_ALERT
-#define KERN_CRIT
-
-#define printk printf
-
 inline unsigned long simple_strtoul(const char *cp, char **endp, unsigned int base) {
 	return strtoul(cp, endp, base);
 }
