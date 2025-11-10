@@ -65,31 +65,59 @@ public class RazerDevice
         
         for (int i = 0; i < actualCount; i++)
         {
-            // Read pointer from the array of pointers
-            IntPtr attrPtr = Marshal.ReadIntPtr(_device.attr_list, i * IntPtr.Size);
-            if (attrPtr != IntPtr.Zero)
+            try
             {
-                try
+                Logger.Trace($"Reading attribute pointer at index {i}");
+                // Read pointer from the array of pointers
+                IntPtr attrPtr = Marshal.ReadIntPtr(_device.attr_list, i * IntPtr.Size);
+                Logger.Trace($"Attribute {i}: pointer = {attrPtr:X}");
+                
+                if (attrPtr != IntPtr.Zero)
                 {
-                    var attr = Marshal.PtrToStructure<DeviceAttribute>(attrPtr);
-                    if (attr.name != IntPtr.Zero)
+                    try
                     {
-                        string? name = Marshal.PtrToStringAnsi(attr.name);
-                        if (name != null)
+                        Logger.Trace($"Marshalling DeviceAttribute structure at {attrPtr:X}");
+                        var attr = Marshal.PtrToStructure<DeviceAttribute>(attrPtr);
+                        Logger.Trace($"Attribute {i}: name pointer = {attr.name:X}, show = {attr.show:X}, store = {attr.store:X}");
+                        
+                        if (attr.name != IntPtr.Zero)
                         {
-                            Logger.Trace($"Loaded attribute: {name}");
-                            attributes[name] = attr;
+                            Logger.Trace($"Reading attribute name from {attr.name:X}");
+                            string? name = Marshal.PtrToStringAnsi(attr.name);
+                            if (name != null)
+                            {
+                                Logger.Debug($"Loaded attribute {i}: {name}");
+                                attributes[name] = attr;
+                            }
+                            else
+                            {
+                                Logger.Warn($"Attribute {i} has null name string");
+                            }
+                        }
+                        else
+                        {
+                            Logger.Warn($"Attribute {i} has null name pointer");
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(ex, $"Failed to load attribute at index {i}, pointer {attrPtr:X}. Skipping.");
+                        continue;
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Logger.Warn(ex, $"Failed to load attribute at index {i}, pointer {attrPtr:X}. Skipping.");
-                    continue;
+                    Logger.Trace($"Attribute {i}: null pointer, skipping");
                 }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, $"Critical error reading attribute pointer at index {i}");
+                throw;
             }
         }
 
+        Logger.Debug($"Successfully loaded {attributes.Count} attributes");
         return attributes;
     }
 
