@@ -23,6 +23,25 @@ public class RazerDeviceManager
         {
             Logger.Info("Starting device manager initialization");
             
+            // Check if DLL exists
+            string dllName = Environment.Is64BitProcess ? "OpenRazer64.dll" : "OpenRazer.dll";
+            string appDir = AppDomain.CurrentDomain.BaseDirectory;
+            string dllPath = Path.Combine(appDir, dllName);
+            
+            Logger.Info($"Looking for DLL: {dllPath}");
+            Logger.Info($"DLL exists: {File.Exists(dllPath)}");
+            
+            if (!File.Exists(dllPath))
+            {
+                Logger.Error($"OpenRazer DLL not found at expected location: {dllPath}");
+                Logger.Info($"Application directory contents:");
+                foreach (var file in Directory.GetFiles(appDir, "*.dll"))
+                {
+                    Logger.Info($"  Found DLL: {Path.GetFileName(file)}");
+                }
+                return false;
+            }
+            
             // Initialize keyboard driver
             Logger.Debug("Attempting to initialize keyboard driver");
             uint kbdCount = OpenRazerNative.InitRazerKbdDriver(out IntPtr kbdDevices);
