@@ -68,8 +68,15 @@ public static class OpenRazerNative
 [StructLayout(LayoutKind.Sequential)]
 public struct Device
 {
-    public IntPtr attr_list;
-    public int attr_count;
+    public IntPtr parent;
+    public IntPtr p;
+    public IntPtr init_name;
+    public IntPtr bus;
+    public IntPtr driver_data;
+    public uint attr_count;
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+    public IntPtr[] attr_list;
+    public IntPtr parent_usb_interface;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -81,7 +88,7 @@ public struct HidDevice
 [StructLayout(LayoutKind.Sequential)]
 public struct DeviceAttribute
 {
-    public IntPtr name;
-    public IntPtr show;
-    public IntPtr store;
+    public IntPtr name;  // const char*
+    public IntPtr show;  // function pointer: ssize_t(*)(struct device*, struct device_attribute*, char*)
+    public IntPtr store; // function pointer: ssize_t(*)(struct device*, struct device_attribute*, const char*, size_t)
 }

@@ -37,7 +37,7 @@ public class RazerDevice
         
         for (int i = 0; i < _device.attr_count; i++)
         {
-            IntPtr attrPtr = Marshal.ReadIntPtr(_device.attr_list, i * IntPtr.Size);
+            IntPtr attrPtr = _device.attr_list[i];
             if (attrPtr != IntPtr.Zero)
             {
                 var attr = Marshal.PtrToStructure<DeviceAttribute>(attrPtr);
