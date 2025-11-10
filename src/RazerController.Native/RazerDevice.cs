@@ -58,9 +58,12 @@ public class RazerDevice
             return attributes;
         }
         
-        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, attr_list pointer={_device.attr_list:X}");
+        // The native attr_list array has a maximum size of 64 elements
+        const int MAX_ATTR_LIST_SIZE = 64;
+        int actualCount = Math.Min(_device.attr_count, MAX_ATTR_LIST_SIZE);
+        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, attr_list pointer={_device.attr_list:X}, reading {actualCount} attributes");
         
-        for (int i = 0; i < _device.attr_count; i++)
+        for (int i = 0; i < actualCount; i++)
         {
             // Read pointer from the array of pointers
             IntPtr attrPtr = Marshal.ReadIntPtr(_device.attr_list, i * IntPtr.Size);
