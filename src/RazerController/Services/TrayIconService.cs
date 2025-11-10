@@ -1,7 +1,10 @@
 using System;
+using System.IO;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Platform;
 using NLog;
 using RazerController.Views;
 
@@ -39,9 +42,33 @@ public class TrayIconService
                 return;
             }
 
+            WindowIcon? icon = null;
+            try
+            {
+                // Try to load icon from file in Assets folder
+                string appDir = AppDomain.CurrentDomain.BaseDirectory;
+                string iconPath = Path.Combine(appDir, "Assets", "avalonia-logo.ico");
+                
+                Logger.Debug($"Looking for tray icon at: {iconPath}");
+                
+                if (File.Exists(iconPath))
+                {
+                    icon = new WindowIcon(iconPath);
+                    Logger.Debug("Tray icon loaded successfully");
+                }
+                else
+                {
+                    Logger.Warn($"Tray icon file not found at: {iconPath}, tray will have no icon");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Could not load tray icon, tray icon will be displayed without icon");
+            }
+
             _trayIcon = new TrayIcon
             {
-                Icon = new WindowIcon("avares://RazerController/Assets/avalonia-logo.ico"),
+                Icon = icon,
                 ToolTipText = "Razer Controller"
             };
             Logger.Debug("TrayIcon object created");
