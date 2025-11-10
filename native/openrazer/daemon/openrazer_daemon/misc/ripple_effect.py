@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 Contains the functions and classes to perform ripple effects
 """
@@ -19,7 +21,7 @@ class RippleEffectThread(threading.Thread):
     """
 
     def __init__(self, parent, device_number):
-        super(RippleEffectThread, self).__init__()
+        super().__init__()
 
         self._logger = logging.getLogger('razer.device{0}.ripplethread'.format(device_number))
         self._parent = parent
@@ -204,13 +206,13 @@ class RippleManager(object):
         :param payload: Binary payload
         :type payload: bytes
         """
-        self._parent.setKeyRow(payload)
+        self._parent._set_key_row(payload)
 
     def refresh_keyboard(self):
         """
         Refresh the keyboard
         """
-        self._parent.setCustom()
+        self._parent._set_custom_effect()
 
     def notify(self, msg):
         """

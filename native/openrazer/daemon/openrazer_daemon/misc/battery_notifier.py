@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 This will do until I can be bothered to create indicator applet to do battery level
 """
@@ -5,15 +7,7 @@ import logging
 import threading
 import datetime
 import time
-
-try:
-    import notify2
-except ImportError:
-    notify2 = None
-
-
-# TODO https://askubuntu.com/questions/110969/notify-send-ignores-timeout
-NOTIFY_TIMEOUT = 4000
+import subprocess
 
 
 class BatteryNotifier(threading.Thread):
@@ -22,29 +16,18 @@ class BatteryNotifier(threading.Thread):
     """
 
     def __init__(self, parent, device_id, device_name):
-        super(BatteryNotifier, self).__init__()
+        super().__init__()
         self._logger = logging.getLogger('razer.device{0}.batterynotifier'.format(device_id))
-        self._notify2 = notify2 is not None
 
         self.event = threading.Event()
         self.frequency = 0
-
-        if self._notify2:
-            try:
-                notify2.init('openrazer_daemon')
-            except Exception as err:
-                self._logger.warning("Failed to init notification daemon, err: {0}".format(err))
-                self._notify2 = False
+        self.percent = 0
 
         self._shutdown = False
         self._device_name = device_name
 
         # Could save reference to parent but only need battery level function
         self._get_battery_func = parent.getBattery
-
-        if self._notify2:
-            self._notification = notify2.Notification(summary="{0}")
-            self._notification.set_timeout(NOTIFY_TIMEOUT)
 
         self._last_notify_time = datetime.datetime(1970, 1, 1)
 
@@ -65,31 +48,54 @@ class BatteryNotifier(threading.Thread):
         """
         self._shutdown = value
 
+    def show_notification(self, summary: str, message: str, icon: str) -> None:
+        try:
+            subprocess.run(["notify-send", "-a", "OpenRazer", "-i", icon, "-t", "4000", summary, message],
+                           check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        except subprocess.CalledProcessError as e:
+            self._logger.warning(f"Failed to show notification: {e.output.strip()}")
+
     def notify_battery(self):
         now = datetime.datetime.now()
 
         if (now - self._last_notify_time).seconds > self.frequency:
-            # Update last notified
+            battery_level = self._get_battery_func()
+            battery_percent = round(battery_level)
+
+            # Sometimes due to various issues we don't get the percentage correctly.
+            # Just ignore them and don't show a bogus notification.
+            # See also: https://github.com/openrazer/openrazer/issues/2122
+            if battery_level in (0.0, -1.0):
+                self._logger.debug("Got bogus battery value: {0}, ignoring.".format(battery_level))
+                # Since we don't update _last_notify_time here we're going to retry very soon again.
+                # Sleep a bit so we don't spam the device with requests.
+                time.sleep(10)
+                return
+
+            # Update the last notified time so that we alert in the configured frequency.
             self._last_notify_time = now
 
-            battery_level = self._get_battery_func()
+            title = self._device_name
+            message = "Battery is {0}%".format(battery_percent)
+            icon = "battery-full"
 
-            # Sometimes on wifi don't get batt
-            if battery_level == -1.0:
-                time.sleep(0.2)
-                battery_level = self._get_battery_func()
+            if battery_level <= 10.0:
+                message = "Battery is low ({0}%). Please charge your device".format(battery_percent)
+                icon = "battery-empty"
 
-            if battery_level < 10.0:
-                if self._notify2:
-                    self._notification.update(summary="{0} Battery at {1:.1f}%".format(self._device_name, battery_level), message='Please charge your device', icon='notification-battery-low')
-                    self._notification.show()
-            else:
-                if self._notify2:
-                    self._notification.update(summary="{0} Battery at {1:.1f}%".format(self._device_name, battery_level))
-                    self._notification.show()
+            elif battery_level <= 30.0:
+                icon = "battery-low"
 
-            if self._notify2:
-                self._logger.debug("{0} Battery at {1:.1f}%".format(self._device_name, battery_level))
+            elif battery_level <= 70.0:
+                icon = "battery-good"
+
+            elif battery_level == 100.0:
+                message = "Battery is fully charged ({0}%)".format(battery_percent)
+
+            self._logger.debug("{0} Battery at {1}%".format(self._device_name, battery_percent))
+
+            if battery_level <= self.percent:
+                self.show_notification(summary=title, message=message, icon=icon)
 
     def run(self):
         """
@@ -153,3 +159,11 @@ class BatteryManager(object):
     @frequency.setter
     def frequency(self, frequency):
         self._battery_thread.frequency = frequency
+
+    @property
+    def percent(self):
+        return self._battery_thread.percent
+
+    @percent.setter
+    def percent(self, percent):
+        self._battery_thread.percent = percent

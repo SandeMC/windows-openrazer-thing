@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 """
 BlackWidow Chroma Effects
 """
@@ -76,11 +78,14 @@ def set_game_mode(self, enable):
 
     driver_path = self.get_driver_path('game_led_state')
 
-    for kb_int in self.additional_interfaces:
-        super_file = os.path.join(kb_int, 'key_super')
-        alt_tab = os.path.join(kb_int, 'key_alt_tab')
-        alt_f4 = os.path.join(kb_int, 'key_alt_f4')
+    # Checks the usual MOUSE PROTOCOL Interface first
+    # before checking additional interfaces such as
+    # the KEYBOARD PROTOCOL.
+    super_file = self.get_driver_path('key_super')
+    alt_tab = self.get_driver_path('key_alt_tab')
+    alt_f4 = self.get_driver_path('key_alt_f4')
 
+    if os.path.exists(super_file):
         if enable:
             open(super_file, 'wb').write(b'\x01')
             open(alt_tab, 'wb').write(b'\x01')
@@ -89,6 +94,24 @@ def set_game_mode(self, enable):
             open(super_file, 'wb').write(b'\x00')
             open(alt_tab, 'wb').write(b'\x00')
             open(alt_f4, 'wb').write(b'\x00')
+    else:
+        for kb_int in self.additional_interfaces:
+            super_file = os.path.join(kb_int, 'key_super')
+            alt_tab = os.path.join(kb_int, 'key_alt_tab')
+            alt_f4 = os.path.join(kb_int, 'key_alt_f4')
+
+            # Some keyboards such as BlackWidow V4 provide additional interfaces
+            # without key_super, key_alt_tab and key_alt_f4 files. We have to go
+            # through all interfaces and check if these files are actually available
+            if os.path.exists(super_file):
+                if enable:
+                    open(super_file, 'wb').write(b'\x01')
+                    open(alt_tab, 'wb').write(b'\x01')
+                    open(alt_f4, 'wb').write(b'\x01')
+                else:
+                    open(super_file, 'wb').write(b'\x00')
+                    open(alt_tab, 'wb').write(b'\x00')
+                    open(alt_f4, 'wb').write(b'\x00')
 
     with open(driver_path, 'w') as driver_file:
         if enable:
@@ -124,6 +147,41 @@ def set_macro_mode(self, enable):
     self.logger.debug("DBus call set_macro_mode")
 
     driver_path = self.get_driver_path('macro_led_state')
+
+    with open(driver_path, 'w') as driver_file:
+        if enable:
+            driver_file.write('1')
+        else:
+            driver_file.write('0')
+
+
+@endpoint('razer.device.misc.keyswitchoptimization', 'getKeyswitchOptimization', out_sig='b')
+def get_keyswitch_optimization(self):
+    """
+    Get Keyswitch optimization state
+
+    :return: Status of keyswitch optimization
+    :rtype: bool
+    """
+    self.logger.debug("DBus call get_keyswitch_optimization")
+
+    driver_path = self.get_driver_path('keyswitch_optimization')
+
+    with open(driver_path, 'r') as driver_file:
+        return driver_file.read().strip() == '1'
+
+
+@endpoint('razer.device.misc.keyswitchoptimization', 'setKeyswitchOptimization', in_sig='b')
+def set_keyswitch_optimization(self, enable):
+    """
+    Set Keyswitch optimization state
+
+    :param enable: Status of keyswitch optimization
+    :type enable: bool
+    """
+    self.logger.debug("DBus call set_keyswitch_optimization")
+
+    driver_path = self.get_driver_path('keyswitch_optimization')
 
     with open(driver_path, 'w') as driver_file:
         if enable:
@@ -185,6 +243,34 @@ def set_wave_effect(self, direction):
 
     if direction not in self.WAVE_DIRS:
         direction = self.WAVE_DIRS[0]
+
+    with open(driver_path, 'w') as driver_file:
+        driver_file.write(str(direction))
+
+
+@endpoint('razer.device.lighting.chroma', 'setWheel', in_sig='i')
+def set_wheel_effect(self, direction):
+    """
+    Set the wheel effect on the device
+
+    :param direction: 1 - right, 2 - left
+    :type direction: int
+    """
+    self.logger.debug("DBus call set_wheel_effect")
+
+    # Notify others
+    self.send_effect_event('setWheel', direction)
+
+    # Note: wheel direction is saved in wave_dir!
+    # TODO: Add wheel_dir field handling instead!
+    self.set_persistence("backlight", "effect", 'wheel')
+    self.set_persistence("backlight", "wave_dir", int(direction))
+
+    driver_path = self.get_driver_path('matrix_effect_wheel')
+
+    # If this needs to be configurable, add WHEEL_DIRS like WAVE_DIRS
+    if direction not in (1, 2):
+        direction = 1
 
     with open(driver_path, 'w') as driver_file:
         driver_file.write(str(direction))
@@ -491,15 +577,9 @@ def set_custom_effect(self):
     """
     Set the device to use custom LED matrix
     """
-    # TODO uncomment
-    # self.logger.debug("DBus call set_custom_effect")
+    self.send_effect_event('setCustom')
 
-    driver_path = self.get_driver_path('matrix_effect_custom')
-
-    payload = b'1'
-
-    with open(driver_path, 'wb') as driver_file:
-        driver_file.write(payload)
+    self._set_custom_effect()
 
 
 @endpoint('razer.device.lighting.chroma', 'setKeyRow', in_sig='ay', byte_arrays=True)
@@ -516,14 +596,9 @@ def set_key_row(self, payload):
     :param payload: Binary payload
     :type payload: bytes
     """
+    self.send_effect_event('setCustom')
 
-    # TODO uncomment
-    # self.logger.debug("DBus call set_key_row")
-
-    driver_path = self.get_driver_path('matrix_custom_frame')
-
-    with open(driver_path, 'wb') as driver_file:
-        driver_file.write(payload)
+    self._set_key_row(payload)
 
 
 @endpoint('razer.device.lighting.custom', 'setRipple', in_sig='yyyd')

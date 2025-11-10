@@ -1,12 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 import numpy as _np
+import numpy.typing as _npt
 import dbus as _dbus
-#from openrazer.client.constants import WAVE_LEFT, WAVE_RIGHT, REACTIVE_500MS, REACTIVE_1000MS, REACTIVE_1500MS, REACTIVE_2000MS
+# from openrazer.client.constants import WAVE_LEFT, WAVE_RIGHT, REACTIVE_500MS, REACTIVE_1000MS, REACTIVE_1500MS, REACTIVE_2000MS
 from openrazer.client import constants as c
+from types import FunctionType
 
 # TODO logging.debug if value out of range v1.1
 
 
-def clamp_ubyte(value):
+def clamp_ubyte(value: int) -> int:
     """
     Clamp a value to 0->255
 
@@ -26,7 +30,7 @@ def clamp_ubyte(value):
 
 # Default Chroma lighting
 class BaseRazerFX(object):
-    def __init__(self, serial: str, capabilities: dict, daemon_dbus=None):
+    def __init__(self, serial: str, capabilities: dict[str, bool], daemon_dbus: _dbus.proxies.ProxyObject = None):
         self._capabilities = capabilities
 
         if daemon_dbus is None:
@@ -48,9 +52,81 @@ class BaseRazerFX(object):
         return self._capabilities.get('lighting_' + capability, False)
 
 
+class RazerAdvancedFX(BaseRazerFX):
+    def __init__(self, serial: str, capabilities: dict[str, bool], daemon_dbus: _dbus.proxies.ProxyObject = None, matrix_dims: tuple[int, int] = (-1, -1)):
+        super().__init__(serial, capabilities, daemon_dbus)
+
+        # Only init'd when there's a matrix
+        self._capabilities = capabilities
+
+        if not all([dim >= 1 for dim in matrix_dims]):
+            raise ValueError("Matrix dimensions cannot contain -1")
+
+        if daemon_dbus is None:
+            session_bus = _dbus.SessionBus()
+            daemon_dbus = session_bus.get_object("org.razer", "/org/razer/device/{0}".format(serial))
+
+        self._matrix_dims = matrix_dims
+        self._lighting_dbus = _dbus.Interface(daemon_dbus, "razer.device.lighting.chroma")
+
+        self.matrix = Frame(matrix_dims)
+
+    @property
+    def cols(self) -> int:
+        """
+        Number of columns in matrix
+
+        :return: Columns
+        :rtype: int
+        """
+        return self._matrix_dims[1]
+
+    @property
+    def rows(self) -> int:
+        """
+        Number of rows in matrix
+
+        :return: Rows
+        :rtype: int
+        """
+        return self._matrix_dims[0]
+
+    def _draw(self, ba: bytes) -> None:
+        self._lighting_dbus.setKeyRow(ba)
+
+        self._lighting_dbus.setCustom()
+
+    def draw(self) -> None:
+        """
+        Draw what's in the current frame buffer
+        """
+        self._draw(bytes(self.matrix))
+
+    def draw_fb_or(self) -> None:
+        self._draw(bytes(self.matrix.draw_with_fb_or()))
+
+    def set_key(self, column_id: int, rgb: bytes, row_id: int = 0) -> None:  # Not needed on mice
+        if self.has('led_single'):
+            if isinstance(rgb, (tuple, list)) and len(rgb) == 3 and all([isinstance(component, int) for component in rgb]):
+                if row_id < self._matrix_dims[0] and column_id < self._matrix_dims[1]:
+                    self._lighting_dbus.setKey(row_id, column_id, [clamp_ubyte(component) for component in rgb])
+                else:
+                    raise ValueError("Row or column out of bounds. Max dimensions are: {0},{1}".format(*self._matrix_dims))
+            else:
+                raise ValueError("RGB must be an RGB tuple")
+
+    def restore(self) -> None:
+        """
+        Restore the device to the last effect
+        """
+        self._lighting_dbus.restoreLastEffect()
+
+
 class RazerFX(BaseRazerFX):
-    def __init__(self, serial: str, capabilities: dict, daemon_dbus=None, matrix_dims=(-1, -1)):
-        super(RazerFX, self).__init__(serial, capabilities, daemon_dbus)
+    advanced: RazerAdvancedFX | None
+
+    def __init__(self, serial: str, capabilities: dict[str, bool], daemon_dbus: _dbus.proxies.ProxyObject = None, matrix_dims: tuple[int, int] = (-1, -1)):
+        super().__init__(serial, capabilities, daemon_dbus)
 
         self._lighting_dbus = _dbus.Interface(self._dbus, "razer.device.lighting.chroma")
 
@@ -79,12 +155,12 @@ class RazerFX(BaseRazerFX):
         return self._lighting_dbus.getEffect()
 
     @property
-    def colors(self) -> bytearray:
+    def colors(self) -> bytes:
         """
         Get current effect colors
 
         :return: Effect colors (an array of 9 bytes, for 3 colors in RGB format)
-        :rtype: bytearray
+        :rtype: bytes
         """
         return bytes(self._lighting_dbus.getEffectColors())
 
@@ -151,6 +227,27 @@ class RazerFX(BaseRazerFX):
 
         if self.has('wave'):
             self._lighting_dbus.setWave(direction)
+
+            return True
+        return False
+
+    def wheel(self, direction: int) -> bool:
+        """
+        Wheel effect
+
+        :param direction: Wheel direction either WHEEL_RIGHT or WHEEL_LEFT
+        :type direction: int
+
+        :return: True if success, False otherwise
+        :rtype: bool
+
+        :raises ValueError: If direction is invalid
+        """
+        if direction not in (c.WHEEL_LEFT, c.WHEEL_RIGHT):
+            raise ValueError("Direction must be WHEEL_RIGHT (0x01) or WHEEL_LEFT (0x02)")
+
+        if self.has('wheel'):
+            self._lighting_dbus.setWheel(direction)
 
             return True
         return False
@@ -447,7 +544,7 @@ class RazerFX(BaseRazerFX):
             return True
         return False
 
-    def ripple_random(self, refreshrate: float = c.RIPPLE_REFRESH_RATE):
+    def ripple_random(self, refreshrate: float = c.RIPPLE_REFRESH_RATE) -> bool:
         """
         Set the Ripple Effect with random colours
 
@@ -589,88 +686,18 @@ class RazerFX(BaseRazerFX):
         return False
 
 
-class RazerAdvancedFX(BaseRazerFX):
-    def __init__(self, serial: str, capabilities: dict, daemon_dbus=None, matrix_dims=(-1, -1)):
-        super(RazerAdvancedFX, self).__init__(serial, capabilities, daemon_dbus)
-
-        # Only init'd when there's a matrix
-        self._capabilities = capabilities
-
-        if not all([dim >= 1 for dim in matrix_dims]):
-            raise ValueError("Matrix dimensions cannot contain -1")
-
-        if daemon_dbus is None:
-            session_bus = _dbus.SessionBus()
-            daemon_dbus = session_bus.get_object("org.razer", "/org/razer/device/{0}".format(serial))
-
-        self._matrix_dims = matrix_dims
-        self._lighting_dbus = _dbus.Interface(daemon_dbus, "razer.device.lighting.chroma")
-
-        self.matrix = Frame(matrix_dims)
-
-    @property
-    def cols(self):
-        """
-        Number of columns in matrix
-
-        :return: Columns
-        :rtype: int
-        """
-        return self._matrix_dims[1]
-
-    @property
-    def rows(self):
-        """
-        Number of rows in matrix
-
-        :return: Rows
-        :rtype: int
-        """
-        return self._matrix_dims[0]
-
-    def _draw(self, ba):
-        self._lighting_dbus.setKeyRow(ba)
-
-        self._lighting_dbus.setCustom()
-
-    def draw(self):
-        """
-        Draw what's in the current frame buffer
-        """
-        self._draw(bytes(self.matrix))
-
-    def draw_fb_or(self):
-        self._draw(bytes(self.matrix.draw_with_fb_or()))
-
-    def set_key(self, column_id, rgb, row_id=0):  # Not needed on mice
-        if self.has('led_single'):
-            if isinstance(rgb, (tuple, list)) and len(rgb) == 3 and all([isinstance(component, int) for component in rgb]):
-                if row_id < self._matrix_dims[0] and column_id < self._matrix_dims[1]:
-                    self._lighting_dbus.setKey(row_id, column_id, [clamp_ubyte(component) for component in rgb])
-                else:
-                    raise ValueError("Row or column out of bounds. Max dimensions are: {0},{1}".format(*self._matrix_dims))
-            else:
-                raise ValueError("RGB must be an RGB tuple")
-
-    def restore(self):
-        """
-        Restore the device to the last effect
-        """
-        self._lighting_dbus.restoreLastEffect()
-
-
 class SingleLed(BaseRazerFX):
-    def __init__(self, serial: str, capabilities: dict, daemon_dbus=None, led_name='logo'):
-        super(SingleLed, self).__init__(serial, capabilities, daemon_dbus)
+    def __init__(self, serial: str, capabilities: dict[str, bool], daemon_dbus: _dbus.proxies.ProxyObject = None, led_name: str = 'logo'):
+        super().__init__(serial, capabilities, daemon_dbus)
 
         self._led_name = led_name
         self._lighting_dbus = _dbus.Interface(self._dbus, "razer.device.lighting.{0}".format(led_name))
 
-    def _shas(self, item):
+    def _shas(self, item: str) -> bool:
         return self.has('{0}_{1}'.format(self._led_name, item))
 
-    def _getattr(self, name):
-        attr = name.replace('#', self._led_name.title())
+    def _getattr(self, name: str) -> FunctionType:
+        attr = name.replace('#', self._led_name.title().replace("_", ""))
         return getattr(self._lighting_dbus, attr, None)
 
     @property
@@ -682,7 +709,7 @@ class SingleLed(BaseRazerFX):
             return False
 
     @active.setter
-    def active(self, value: bool):
+    def active(self, value: bool) -> None:
         func = self._getattr('set#Active')
         if func is not None:
             if value:
@@ -701,12 +728,12 @@ class SingleLed(BaseRazerFX):
         return str(self._getattr('get#Effect')())
 
     @property
-    def colors(self) -> bytearray:
+    def colors(self) -> bytes:
         """
         Get current effect colors
 
         :return: Effect colors (an array of 9 bytes, for 3 colors in RGB format)
-        :rtype: bytearray
+        :rtype: bytes
         """
         return bytes(self._getattr('get#EffectColors')())
 
@@ -731,13 +758,13 @@ class SingleLed(BaseRazerFX):
         return int(self._getattr('get#WaveDir')())
 
     @property
-    def brightness(self):
+    def brightness(self) -> float:
         if self._shas('brightness'):
             return float(self._getattr('get#Brightness')())
         return 0.0
 
     @brightness.setter
-    def brightness(self, brightness: float):
+    def brightness(self, brightness: float) -> None:
         if self._shas('brightness'):
             if not isinstance(brightness, (float, int)):
                 raise ValueError("Brightness is not a float")
@@ -816,6 +843,13 @@ class SingleLed(BaseRazerFX):
     def none(self) -> bool:
         if self._shas('none'):
             self._getattr('set#None')()
+
+            return True
+        return False
+
+    def on(self) -> bool:
+        if self._shas('on'):
+            self._getattr('set#On')()
 
             return True
         return False
@@ -972,10 +1006,35 @@ class SingleLed(BaseRazerFX):
             return True
         return False
 
+    def breath_mono(self) -> bool:
+        """
+        Breath effect - mono colour
+
+        :return: True if success, False otherwise
+        :rtype: bool
+
+        :raises ValueError: If parameters are invalid
+        """
+
+        if self._shas('breath_mono'):
+            self._getattr('set#BreathMono')()
+
+            return True
+        return False
+
 
 class MiscLighting(BaseRazerFX):
-    def __init__(self, serial: str, capabilities: dict, daemon_dbus=None):
-        super(MiscLighting, self).__init__(serial, capabilities, daemon_dbus)
+    _logo: SingleLed | None
+    _scroll: SingleLed | None
+    _left: SingleLed | None
+    _right: SingleLed | None
+    _charging: SingleLed | None
+    _fast_charging: SingleLed | None
+    _fully_charged: SingleLed | None
+    _backlight: SingleLed | None
+
+    def __init__(self, serial: str, capabilities: dict[str, bool], daemon_dbus: _dbus.proxies.ProxyObject = None):
+        super().__init__(serial, capabilities, daemon_dbus)
 
         self._lighting_dbus = _dbus.Interface(self._dbus, "razer.device.lighting.logo")
 
@@ -999,29 +1058,56 @@ class MiscLighting(BaseRazerFX):
         else:
             self._right = None
 
+        if self.has('charging'):
+            self._charging = SingleLed(serial, capabilities, daemon_dbus, 'charging')
+        else:
+            self._charging = None
+
+        if self.has('fast_charging'):
+            self._fast_charging = SingleLed(serial, capabilities, daemon_dbus, 'fast_charging')
+        else:
+            self._fast_charging = None
+
+        if self.has('fully_charged'):
+            self._fully_charged = SingleLed(serial, capabilities, daemon_dbus, 'fully_charged')
+        else:
+            self._fully_charged = None
+
         if self.has('backlight'):
             self._backlight = SingleLed(serial, capabilities, daemon_dbus, 'backlight')
         else:
             self._backlight = None
 
     @property
-    def logo(self):
+    def logo(self) -> SingleLed | None:
         return self._logo
 
     @property
-    def scroll_wheel(self):
+    def scroll_wheel(self) -> SingleLed | None:
         return self._scroll
 
     @property
-    def left(self):
+    def left(self) -> SingleLed | None:
         return self._left
 
     @property
-    def right(self):
+    def right(self) -> SingleLed | None:
         return self._right
 
     @property
-    def backlight(self):
+    def charging(self) -> SingleLed | None:
+        return self._charging
+
+    @property
+    def fast_charging(self) -> SingleLed | None:
+        return self._fast_charging
+
+    @property
+    def fully_charged(self) -> SingleLed | None:
+        return self._fully_charged
+
+    @property
+    def backlight(self) -> SingleLed | None:
         return self._backlight
 
 
@@ -1029,17 +1115,17 @@ class Frame(object):
     """
     Class to represent the RGB matrix of the keyboard. So to animate you'd use multiple frames
     """
+    _matrix: _npt.NDArray[_np.uint8]
+    _fb1: _npt.NDArray[_np.uint8]
 
-    def __init__(self, dimensions):
+    def __init__(self, dimensions: tuple[int, int]):
         self._rows, self._cols = dimensions
         self._components = 3
 
-        self._matrix = None
-        self._fb1 = None
-        self.reset()
+        self._init()
 
     # Index with row, col OR y, x
-    def __getitem__(self, key: tuple) -> tuple:
+    def __getitem__(self, key: tuple[int, int]) -> tuple[int, int, int]:
         """
         Method to allow a slice to get an RGB tuple
 
@@ -1058,7 +1144,7 @@ class Frame(object):
         return tuple(self._matrix[:, key[0], key[1]])
 
     # Index with row, col OR y, x
-    def __setitem__(self, key: tuple, rgb: tuple):
+    def __setitem__(self, key: tuple[int, int], rgb: tuple[int, int, int]) -> None:
         """
         Method to allow a slice to set an RGB tuple
 
@@ -1086,17 +1172,20 @@ class Frame(object):
         """
         return b''.join([self.row_binary(row_id) for row_id in range(0, self._rows)])
 
-    def reset(self):
+    def _init(self) -> None:
+        self._matrix = _np.zeros((self._components, self._rows, self._cols), 'uint8')
+        self._fb1 = _np.copy(self._matrix)
+
+    def reset(self) -> None:
         """
         Init/Clear the matrix
         """
         if self._matrix is None:
-            self._matrix = _np.zeros((self._components, self._rows, self._cols), 'uint8')
-            self._fb1 = _np.copy(self._matrix)
+            self._init()
         else:
             self._matrix.fill(0)
 
-    def set(self, y: int, x: int, rgb: tuple):
+    def set(self, y: int, x: int, rgb: tuple[int, int, int]) -> None:
         """
         Method to allow a slice to set an RGB tuple
 
@@ -1113,7 +1202,7 @@ class Frame(object):
         """
         self.__setitem__((y, x), rgb)
 
-    def get(self, y: int, x: int) -> list:
+    def get(self, y: int, x: int) -> tuple[int, int, int]:
         """
         Method to allow a slice to get an RGB tuple
 
@@ -1147,7 +1236,7 @@ class Frame(object):
 
         return row_id.to_bytes(1, byteorder='big') + start.to_bytes(1, byteorder='big') + end.to_bytes(1, byteorder='big') + self._matrix[:, row_id].tobytes(order='F')
 
-    def to_binary(self):
+    def to_binary(self) -> bytes:
         """
         Get the whole binary for the keyboard to be sent to the driver.
 
@@ -1157,12 +1246,12 @@ class Frame(object):
         return bytes(self)
 
     # Simple FB
-    def to_framebuffer(self):
+    def to_framebuffer(self) -> None:
         self._fb1 = _np.copy(self._matrix)
 
-    def to_framebuffer_or(self):
+    def to_framebuffer_or(self) -> None:
         self._fb1 = _np.bitwise_or(self._fb1, self._matrix)  # pylint: disable=no-member
 
-    def draw_with_fb_or(self):
+    def draw_with_fb_or(self) -> bytes:
         self._matrix = _np.bitwise_or(self._fb1, self._matrix)  # pylint: disable=no-member
         return bytes(self)

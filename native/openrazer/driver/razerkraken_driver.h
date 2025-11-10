@@ -1,27 +1,17 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (c) 2015 Terry Cain <terrys-home.co.uk>
- */
-
-/*
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
+ * Copyright (c) 2015 Terri Cain <terri@dolphincorp.co.uk>
  */
 
 #ifndef __HID_RAZER_KRAKEN_H
 #define __HID_RAZER_KRAKEN_H
 
-// Codename Unknown
 #define USB_DEVICE_ID_RAZER_KRAKEN_CLASSIC 0x0501
-// Codename Rainie
-#define USB_DEVICE_ID_RAZER_KRAKEN 0x0504
-// Codename Unknown
+#define USB_DEVICE_ID_RAZER_KRAKEN 0x0504 // Codename Rainie
 #define USB_DEVICE_ID_RAZER_KRAKEN_CLASSIC_ALT 0x0506
-// Codename Kylie
-#define USB_DEVICE_ID_RAZER_KRAKEN_V2 0x0510
-// Codename Unknown
+#define USB_DEVICE_ID_RAZER_KRAKEN_V2 0x0510 // Codename Kylie
 #define USB_DEVICE_ID_RAZER_KRAKEN_ULTIMATE 0x0527
+#define USB_DEVICE_ID_RAZER_KRAKEN_KITTY_V2 0x0560
 
 #define USB_INTERFACE_PROTOCOL_NONE 0
 
@@ -149,7 +139,6 @@ union razer_kraken_effect_byte {
 #define KYLIE_BREATHING2_ADDRESS_START 0x1745
 #define KYLIE_BREATHING3_ADDRESS_START 0x174D
 
-
 struct razer_kraken_request_report {
     unsigned char report_id;
     unsigned char destination;
@@ -163,11 +152,5 @@ struct razer_kraken_response_report {
     unsigned char report_id;
     unsigned char arguments[36];
 };
-
-
-
-
-
-
 
 #endif

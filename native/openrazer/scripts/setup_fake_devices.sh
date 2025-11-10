@@ -4,13 +4,20 @@
 # you want to fake (for debugging)
 #
 
-whereami=$(dirname "$0")
+whereami="$(dirname "$0")"
 
 device_cfg_files=$(ls "$whereami/../pylib/openrazer/_fake_driver/"*.cfg)
 config_dir="/tmp/daemon_config/"
 test_dir="/tmp/daemon_test"
 
-# Check if x-terminal-emulatr exists (only on Debian & derivatives)
+# Check zenity is installed
+command -v zenity >/dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "This script requires 'zenity', but was not found."
+    exit 1
+fi
+
+# Check if x-terminal-emulator exists (only on Debian & derivatives)
 command -v x-terminal-emulator >/dev/null 2>&1
 if [ $? == 0 ]; then
     terminal_cmd="x-terminal-emulator -e"
@@ -53,5 +60,4 @@ $terminal_cmd "$whereami/create_fake_device.py" --dest "$test_dir" $options &
 pkill -e openrazer-daemon
 
 # Start the daemon in a new terminal window.
-$terminal_cmd openrazer-daemon --verbose -F --run-dir "$config_dir/data" --log-dir "$config_dir/logs" --test-dir "$test_dir"
-
+$terminal_cmd "$whereami/../daemon/run_openrazer_daemon.py" --verbose -F --run-dir "$config_dir/data" --log-dir "$config_dir/logs" --test-dir "$test_dir"
