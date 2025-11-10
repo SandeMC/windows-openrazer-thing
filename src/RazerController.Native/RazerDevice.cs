@@ -26,7 +26,16 @@ public class RazerDevice
     {
         _devicePtr = devicePtr;
         DeviceType = deviceType;
-        _device = Marshal.PtrToStructure<Device>(devicePtr);
+        
+        try
+        {
+            _device = Marshal.PtrToStructure<Device>(devicePtr);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to marshal Device structure from pointer {devicePtr:X}", ex);
+        }
+        
         _attributes = LoadAttributes();
         LoadDeviceInfo();
     }
@@ -35,19 +44,36 @@ public class RazerDevice
     {
         var attributes = new Dictionary<string, DeviceAttribute>();
         
-        for (int i = 0; i < _device.attr_count; i++)
+        // Check if attr_list array is null
+        if (_device.attr_list == null)
+        {
+            return attributes;
+        }
+        
+        // Ensure we don't go beyond array bounds
+        int count = (int)Math.Min(_device.attr_count, (uint)_device.attr_list.Length);
+        
+        for (int i = 0; i < count; i++)
         {
             IntPtr attrPtr = _device.attr_list[i];
             if (attrPtr != IntPtr.Zero)
             {
-                var attr = Marshal.PtrToStructure<DeviceAttribute>(attrPtr);
-                if (attr.name != IntPtr.Zero)
+                try
                 {
-                    string? name = Marshal.PtrToStringAnsi(attr.name);
-                    if (name != null)
+                    var attr = Marshal.PtrToStructure<DeviceAttribute>(attrPtr);
+                    if (attr.name != IntPtr.Zero)
                     {
-                        attributes[name] = attr;
+                        string? name = Marshal.PtrToStringAnsi(attr.name);
+                        if (name != null)
+                        {
+                            attributes[name] = attr;
+                        }
                     }
+                }
+                catch
+                {
+                    // Skip invalid attribute pointers
+                    continue;
                 }
             }
         }
