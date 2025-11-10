@@ -4,12 +4,17 @@ A modern Windows application for controlling Razer devices without Synapse, usin
 
 ## Features
 
-- 🎮 **Device Support**: Keyboards, Mice, Accessories, and Headsets
+- 🎮 **Device Support**: 250+ Razer devices including Keyboards, Mice, Accessories, and Headsets
+  - **Mice**: 111 devices including DeathAdder V3, Viper V3 Pro, Basilisk V3, and more
+  - **Keyboards**: 114 devices including BlackWidow, Huntsman, Ornata series
+  - **Accessories**: 26 devices including mouse mats, charging docks, and more
+  - **Headsets**: Kraken series and other audio devices
 - 🌈 **RGB Lighting Control**: Static colors, spectrum effects, breathing effects
 - 🎯 **Mouse Settings**: DPI and polling rate configuration
 - 🖥️ **System Tray**: Minimize to tray for background operation
 - 💡 **Brightness Control**: Adjust lighting brightness
 - 🔌 **Plug & Play**: Automatic device detection
+- 🔄 **Updated Device Database**: Synced with latest OpenRazer project (includes 2024-2025 devices)
 
 ## Screenshots
 
