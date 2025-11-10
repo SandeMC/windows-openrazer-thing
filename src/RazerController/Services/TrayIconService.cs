@@ -2,49 +2,72 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using NLog;
 using RazerController.Views;
 
 namespace RazerController.Services;
 
 public class TrayIconService
 {
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     private TrayIcon? _trayIcon;
     private readonly IClassicDesktopStyleApplicationLifetime? _desktop;
 
     public TrayIconService()
     {
+        Logger.Debug("Creating TrayIconService");
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             _desktop = desktop;
+            Logger.Debug("Desktop application lifetime obtained");
+        }
+        else
+        {
+            Logger.Warn("Desktop application lifetime not available");
         }
     }
 
     public void Initialize()
     {
-        if (_desktop == null) return;
-
-        _trayIcon = new TrayIcon
+        try
         {
-            Icon = new WindowIcon("/Assets/avalonia-logo.ico"),
-            ToolTipText = "Razer Controller"
-        };
+            Logger.Info("Initializing tray icon");
+            
+            if (_desktop == null)
+            {
+                Logger.Warn("Cannot initialize tray icon - desktop is null");
+                return;
+            }
 
-        var menu = new NativeMenu();
+            _trayIcon = new TrayIcon
+            {
+                Icon = new WindowIcon("/Assets/avalonia-logo.ico"),
+                ToolTipText = "Razer Controller"
+            };
+            Logger.Debug("TrayIcon object created");
 
-        var showItem = new NativeMenuItem("Show");
-        showItem.Click += (s, e) => ShowMainWindow();
-        menu.Items.Add(showItem);
+            var menu = new NativeMenu();
 
-        menu.Items.Add(new NativeMenuItemSeparator());
+            var showItem = new NativeMenuItem("Show");
+            showItem.Click += (s, e) => ShowMainWindow();
+            menu.Items.Add(showItem);
 
-        var exitItem = new NativeMenuItem("Exit");
-        exitItem.Click += (s, e) => _desktop.Shutdown();
-        menu.Items.Add(exitItem);
+            menu.Items.Add(new NativeMenuItemSeparator());
 
-        _trayIcon.Menu = menu;
-        _trayIcon.Clicked += (s, e) => ShowMainWindow();
+            var exitItem = new NativeMenuItem("Exit");
+            exitItem.Click += (s, e) => _desktop.Shutdown();
+            menu.Items.Add(exitItem);
 
-        _trayIcon.IsVisible = true;
+            _trayIcon.Menu = menu;
+            _trayIcon.Clicked += (s, e) => ShowMainWindow();
+
+            _trayIcon.IsVisible = true;
+            Logger.Info("Tray icon initialized and made visible");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error initializing tray icon");
+        }
     }
 
     private void ShowMainWindow()
