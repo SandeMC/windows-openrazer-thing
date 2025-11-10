@@ -33,7 +33,7 @@ public class RazerDevice
         try
         {
             _device = Marshal.PtrToStructure<Device>(devicePtr);
-            Logger.Debug($"Device structure marshalled successfully. attr_count={_device.attr_count}, attr_list null={_device.attr_list == null}");
+            Logger.Debug($"Device structure marshalled successfully. attr_count={_device.attr_count}, attr_list pointer={_device.attr_list:X}");
         }
         catch (Exception ex)
         {
@@ -51,20 +51,19 @@ public class RazerDevice
     {
         var attributes = new Dictionary<string, DeviceAttribute>();
         
-        // Check if attr_list array is null
-        if (_device.attr_list == null)
+        // Check if attr_list pointer is null
+        if (_device.attr_list == IntPtr.Zero)
         {
-            Logger.Warn("attr_list is null, returning empty attributes dictionary");
+            Logger.Warn("attr_list pointer is null, returning empty attributes dictionary");
             return attributes;
         }
         
-        // Ensure we don't go beyond array bounds
-        int count = (int)Math.Min(_device.attr_count, (uint)_device.attr_list.Length);
-        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, array length={_device.attr_list.Length}, processing {count} attributes");
+        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, attr_list pointer={_device.attr_list:X}");
         
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < _device.attr_count; i++)
         {
-            IntPtr attrPtr = _device.attr_list[i];
+            // Read pointer from the array of pointers
+            IntPtr attrPtr = Marshal.ReadIntPtr(_device.attr_list, i * IntPtr.Size);
             if (attrPtr != IntPtr.Zero)
             {
                 try
