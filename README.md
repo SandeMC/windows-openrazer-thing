@@ -120,11 +120,23 @@ For a complete list, see the [OpenRazer device list](https://openrazer.github.io
 
 ## Troubleshooting
 
-### "Failed to initialize" Error
+### "Failed to initialize" or "DLL not found" Error
 
+**Check Required DLLs:**
+The application requires two DLL files in the same folder as the executable:
+- `OpenRazer64.dll` (or `OpenRazer.dll` for x86)
+- `hidapi.dll` (USB HID API dependency)
+
+**If DLLs are missing:**
+1. Run the build script: `.\build.ps1` (automatically copies both DLLs)
+2. Or manually copy from:
+   - `native/OpenRazer64.dll` → application folder
+   - `native/dependencies/hidapi-win/x64/hidapi.dll` → application folder
+
+**Other steps:**
 - Ensure your Razer device is properly connected
-- Make sure the OpenRazer DLL is in the same folder as the executable
 - Try running as Administrator
+- Check the `logs/` folder for detailed error messages
 
 ### Device Not Detected
 

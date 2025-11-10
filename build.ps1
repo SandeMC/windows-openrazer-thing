@@ -58,15 +58,16 @@ try {
     Write-Host ".NET Application built successfully!" -ForegroundColor Green
     Write-Host ""
 
-    # Copy Native DLL to output
+    # Copy Native DLLs to output
     $dllName = if ($Platform -eq "x64") { "OpenRazer64.dll" } else { "OpenRazer.dll" }
     $dllSource = "native\$dllName"
-    $dllDest = "src\RazerController\bin\$Configuration\net9.0\$dllName"
+    $outputDir = "src\RazerController\bin\$Configuration\net9.0"
+    $dllDest = "$outputDir\$dllName"
     
     if (Test-Path $dllSource) {
         Write-Host "Copying $dllName to application output..." -ForegroundColor Yellow
         Copy-Item $dllSource $dllDest -Force
-        Write-Host "DLL copied successfully!" -ForegroundColor Green
+        Write-Host "OpenRazer DLL copied successfully!" -ForegroundColor Green
     } else {
         Write-Host "WARNING: Native DLL not found at $dllSource" -ForegroundColor Yellow
         Write-Host "Checking for DLL in alternate locations..."
@@ -74,6 +75,19 @@ try {
             Write-Host "  Found: $($_.FullName)"
         }
         Write-Host "The application may not work without the native DLL." -ForegroundColor Yellow
+    }
+    
+    # Copy hidapi.dll dependency
+    $hidapiSource = "native\dependencies\hidapi-win\$Platform\hidapi.dll"
+    $hidapiDest = "$outputDir\hidapi.dll"
+    
+    if (Test-Path $hidapiSource) {
+        Write-Host "Copying hidapi.dll dependency..." -ForegroundColor Yellow
+        Copy-Item $hidapiSource $hidapiDest -Force
+        Write-Host "hidapi.dll copied successfully!" -ForegroundColor Green
+    } else {
+        Write-Host "WARNING: hidapi.dll not found at $hidapiSource" -ForegroundColor Yellow
+        Write-Host "The application may not work without this dependency." -ForegroundColor Yellow
     }
     Write-Host ""
 
@@ -92,10 +106,13 @@ try {
             throw "Publish failed"
         }
         
-        # Copy native DLL to publish folder
+        # Copy native DLLs to publish folder
         $publishDir = "src\RazerController\bin\$Configuration\net9.0\$runtime\publish"
         if (Test-Path $dllSource) {
             Copy-Item $dllSource "$publishDir\$dllName" -Force
+        }
+        if (Test-Path $hidapiSource) {
+            Copy-Item $hidapiSource "$publishDir\hidapi.dll" -Force
         }
         
         Write-Host "Application published successfully!" -ForegroundColor Green
