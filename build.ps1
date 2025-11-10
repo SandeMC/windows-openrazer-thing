@@ -76,19 +76,6 @@ try {
         }
         Write-Host "The application may not work without the native DLL." -ForegroundColor Yellow
     }
-    
-    # Copy hidapi.dll dependency
-    $hidapiSource = "native\dependencies\hidapi-win\$Platform\hidapi.dll"
-    $hidapiDest = "$outputDir\hidapi.dll"
-    
-    if (Test-Path $hidapiSource) {
-        Write-Host "Copying hidapi.dll dependency..." -ForegroundColor Yellow
-        Copy-Item $hidapiSource $hidapiDest -Force
-        Write-Host "hidapi.dll copied successfully!" -ForegroundColor Green
-    } else {
-        Write-Host "WARNING: hidapi.dll not found at $hidapiSource" -ForegroundColor Yellow
-        Write-Host "The application may not work without this dependency." -ForegroundColor Yellow
-    }
     Write-Host ""
 
     # Publish if requested
@@ -106,13 +93,10 @@ try {
             throw "Publish failed"
         }
         
-        # Copy native DLLs to publish folder
+        # Copy native DLL to publish folder
         $publishDir = "src\RazerController\bin\$Configuration\net9.0\$runtime\publish"
         if (Test-Path $dllSource) {
             Copy-Item $dllSource "$publishDir\$dllName" -Force
-        }
-        if (Test-Path $hidapiSource) {
-            Copy-Item $hidapiSource "$publishDir\hidapi.dll" -Force
         }
         
         Write-Host "Application published successfully!" -ForegroundColor Green

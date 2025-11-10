@@ -61,7 +61,7 @@ jobs:
     - name: Build .NET application
       run: dotnet build RazerController.sln -c ${{ matrix.configuration }} --no-restore
     
-    - name: Copy native DLLs to output
+    - name: Copy native DLL to output
       run: |
         $outputDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0"
         
@@ -71,12 +71,6 @@ jobs:
         $dllDest = "$outputDir\$dllName"
         Copy-Item $dllSource $dllDest -Force
         Write-Host "Copied OpenRazer DLL from $dllSource to $dllDest"
-        
-        # Copy hidapi.dll dependency
-        $hidapiSource = "native\dependencies\hidapi-win\${{ matrix.platform }}\hidapi.dll"
-        $hidapiDest = "$outputDir\hidapi.dll"
-        Copy-Item $hidapiSource $hidapiDest -Force
-        Write-Host "Copied hidapi.dll from $hidapiSource to $hidapiDest"
       shell: pwsh
     
     - name: Publish application
@@ -98,11 +92,6 @@ jobs:
         $dllSource = "native\$dllName"
         Copy-Item $dllSource "$publishDir\$dllName" -Force
         Write-Host "Copied OpenRazer DLL to publish folder: $publishDir\$dllName"
-        
-        # Copy hidapi.dll dependency
-        $hidapiSource = "native\dependencies\hidapi-win\${{ matrix.platform }}\hidapi.dll"
-        Copy-Item $hidapiSource "$publishDir\hidapi.dll" -Force
-        Write-Host "Copied hidapi.dll to publish folder: $publishDir\hidapi.dll"
       shell: pwsh
     
     - name: Upload artifact
