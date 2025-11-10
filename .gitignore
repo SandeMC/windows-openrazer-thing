@@ -80,6 +80,10 @@ $RECYCLE.BIN/
 *.tmp
 *.temp
 
+# Log directories
+logs/
+**/logs/
+
 # Don't ignore the native DLL binaries if they are pre-built
 !native/dependencies/**/*.dll
 !native/dependencies/**/*.lib

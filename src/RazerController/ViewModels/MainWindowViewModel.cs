@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NLog;
 using RazerController.Models;
 using RazerController.Native;
 
@@ -10,6 +11,7 @@ namespace RazerController.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly RazerDeviceManager _deviceManager;
 
     [ObservableProperty]
@@ -49,7 +51,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
+        Logger.Info("Initializing MainWindowViewModel");
         _deviceManager = new RazerDeviceManager();
+        Logger.Info("RazerDeviceManager created");
     }
 
     [RelayCommand]
@@ -57,30 +61,37 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
+            Logger.Info("Initialize command invoked - attempting to detect Razer devices");
             bool success = _deviceManager.Initialize();
             if (success)
             {
+                Logger.Info("Device manager initialized successfully");
                 Devices.Clear();
                 foreach (var device in _deviceManager.Devices)
                 {
                     Devices.Add(new DeviceModel(device));
+                    Logger.Info($"Found device: {device.DeviceTypeName} (Type: {device.DeviceType})");
                 }
 
                 IsInitialized = true;
                 StatusMessage = $"Found {Devices.Count} Razer device(s)";
+                Logger.Info($"Total devices found: {Devices.Count}");
                 
                 if (Devices.Count > 0)
                 {
                     SelectedDevice = Devices[0];
+                    Logger.Info($"Selected first device: {SelectedDevice.Name}");
                 }
             }
             else
             {
+                Logger.Warn("Device manager initialization failed");
                 StatusMessage = "Failed to initialize. Make sure OpenRazer DLL is present.";
             }
         }
         catch (Exception ex)
         {
+            Logger.Error(ex, "Error during device initialization");
             StatusMessage = $"Error: {ex.Message}";
         }
     }
