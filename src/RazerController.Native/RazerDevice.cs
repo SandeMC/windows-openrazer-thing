@@ -82,16 +82,23 @@ public class RazerDevice
                         
                         if (attr.name != IntPtr.Zero)
                         {
-                            Logger.Trace($"Reading attribute name from {attr.name:X}");
-                            string? name = Marshal.PtrToStringAnsi(attr.name);
-                            if (name != null)
+                            Logger.Trace($"Reading attribute name from pointer {attr.name:X16}");
+                            try
                             {
-                                Logger.Debug($"Loaded attribute {i}: {name}");
-                                attributes[name] = attr;
+                                string? name = Marshal.PtrToStringAnsi(attr.name);
+                                if (name != null && !string.IsNullOrWhiteSpace(name))
+                                {
+                                    Logger.Debug($"Loaded attribute {i}: {name}");
+                                    attributes[name] = attr;
+                                }
+                                else
+                                {
+                                    Logger.Warn($"Attribute {i} has null or empty name string (read from {attr.name:X16})");
+                                }
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                Logger.Warn($"Attribute {i} has null name string");
+                                Logger.Error(ex, $"Failed to read name string from pointer {attr.name:X16} for attribute {i}");
                             }
                         }
                         else
