@@ -163,17 +163,28 @@ public class RazerDevice
 
     public bool WriteAttribute(string name, byte[] data)
     {
-        if (!_attributes.TryGetValue(name, out var attr) || attr.store == IntPtr.Zero)
+        if (!_attributes.TryGetValue(name, out var attr))
+        {
+            Logger.Debug($"Attribute '{name}' not found in device attributes");
             return false;
+        }
+        
+        if (attr.store == IntPtr.Zero)
+        {
+            Logger.Debug($"Attribute '{name}' has no store function (read-only)");
+            return false;
+        }
 
         try
         {
             var storeFunc = Marshal.GetDelegateForFunctionPointer<StoreAttributeDelegate>(attr.store);
             int result = storeFunc(_devicePtr, IntPtr.Zero, data, data.Length);
+            Logger.Debug($"WriteAttribute '{name}' returned {result}");
             return result >= 0;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Error(ex, $"Error writing attribute '{name}'");
             return false;
         }
     }
@@ -186,32 +197,77 @@ public class RazerDevice
     // RGB control methods
     public bool SetStaticColor(byte r, byte g, byte b)
     {
-        return WriteAttribute("matrix_effect_static", new[] { r, g, b });
+        bool success = false;
+        Logger.Debug($"SetStaticColor({r}, {g}, {b})");
+        
+        // Try all possible static color attributes
+        if (HasAttribute("matrix_effect_static"))
+            success |= WriteAttribute("matrix_effect_static", new[] { r, g, b });
+        if (HasAttribute("logo_matrix_effect_static"))
+            success |= WriteAttribute("logo_matrix_effect_static", new[] { r, g, b });
+        if (HasAttribute("scroll_matrix_effect_static"))
+            success |= WriteAttribute("scroll_matrix_effect_static", new[] { r, g, b });
+        if (HasAttribute("backlight_led_effect"))
+            success |= WriteAttribute("backlight_led_effect", new[] { r, g, b });
+        
+        return success;
     }
 
     public bool SetLogoStaticColor(byte r, byte g, byte b)
     {
+        Logger.Debug($"SetLogoStaticColor({r}, {g}, {b})");
         return WriteAttribute("logo_matrix_effect_static", new[] { r, g, b });
     }
 
     public bool SetScrollStaticColor(byte r, byte g, byte b)
     {
+        Logger.Debug($"SetScrollStaticColor({r}, {g}, {b})");
         return WriteAttribute("scroll_matrix_effect_static", new[] { r, g, b });
     }
 
     public bool SetSpectrumEffect()
     {
-        return WriteAttribute("matrix_effect_spectrum", new byte[] { 0 });
+        bool success = false;
+        Logger.Debug("SetSpectrumEffect()");
+        
+        if (HasAttribute("matrix_effect_spectrum"))
+            success |= WriteAttribute("matrix_effect_spectrum", new byte[] { 0 });
+        if (HasAttribute("logo_matrix_effect_spectrum"))
+            success |= WriteAttribute("logo_matrix_effect_spectrum", new byte[] { 0 });
+        if (HasAttribute("scroll_matrix_effect_spectrum"))
+            success |= WriteAttribute("scroll_matrix_effect_spectrum", new byte[] { 0 });
+        
+        return success;
     }
 
     public bool SetBreathEffect(byte r, byte g, byte b)
     {
-        return WriteAttribute("matrix_effect_breath", new[] { r, g, b });
+        bool success = false;
+        Logger.Debug($"SetBreathEffect({r}, {g}, {b})");
+        
+        if (HasAttribute("matrix_effect_breath"))
+            success |= WriteAttribute("matrix_effect_breath", new[] { r, g, b });
+        if (HasAttribute("logo_matrix_effect_breath"))
+            success |= WriteAttribute("logo_matrix_effect_breath", new[] { r, g, b });
+        if (HasAttribute("scroll_matrix_effect_breath"))
+            success |= WriteAttribute("scroll_matrix_effect_breath", new[] { r, g, b });
+        
+        return success;
     }
 
     public bool SetNoneEffect()
     {
-        return WriteAttribute("matrix_effect_none", new byte[] { 0 });
+        bool success = false;
+        Logger.Debug("SetNoneEffect()");
+        
+        if (HasAttribute("matrix_effect_none"))
+            success |= WriteAttribute("matrix_effect_none", new byte[] { 0 });
+        if (HasAttribute("logo_matrix_effect_none"))
+            success |= WriteAttribute("logo_matrix_effect_none", new byte[] { 0 });
+        if (HasAttribute("scroll_matrix_effect_none"))
+            success |= WriteAttribute("scroll_matrix_effect_none", new byte[] { 0 });
+        
+        return success;
     }
 
     public bool SetBrightness(byte brightness)
@@ -254,12 +310,41 @@ public class RazerDevice
         return WriteAttribute("dpi", new[] { dpiByte, dpiByte });
     }
 
-    public string? GetDPI()
+    public int? GetDPI()
     {
         if (DeviceType != RazerDeviceType.Mouse)
             return null;
 
-        return ReadAttribute("dpi");
+        try
+        {
+            if (!_attributes.TryGetValue("dpi", out var attr) || attr.show == IntPtr.Zero)
+            {
+                Logger.Debug("DPI attribute not found or not readable");
+                return null;
+            }
+
+            var buffer = new byte[256];
+            var showFunc = Marshal.GetDelegateForFunctionPointer<ShowAttributeDelegate>(attr.show);
+            int length = showFunc(_devicePtr, IntPtr.Zero, buffer);
+            
+            Logger.Debug($"GetDPI returned {length} bytes: {BitConverter.ToString(buffer, 0, Math.Min(length, 20))}");
+            
+            if (length >= 2)
+            {
+                // DPI is typically returned as two bytes (X and Y DPI)
+                // Each byte represents DPI/100
+                int dpiX = buffer[0] * 100;
+                int dpiY = buffer[1] * 100;
+                Logger.Debug($"Parsed DPI: X={dpiX}, Y={dpiY}");
+                return dpiX; // Return X DPI (usually they're the same)
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error reading DPI");
+        }
+
+        return null;
     }
 
     public bool SetPollRate(int pollRate)
@@ -270,12 +355,50 @@ public class RazerDevice
         return WriteAttribute("poll_rate", pollRate.ToString());
     }
 
-    public string? GetPollRate()
+    public int? GetPollRate()
     {
         if (DeviceType != RazerDeviceType.Mouse)
             return null;
 
-        return ReadAttribute("poll_rate");
+        try
+        {
+            if (!_attributes.TryGetValue("poll_rate", out var attr) || attr.show == IntPtr.Zero)
+            {
+                Logger.Debug("poll_rate attribute not found or not readable");
+                return null;
+            }
+
+            var buffer = new byte[256];
+            var showFunc = Marshal.GetDelegateForFunctionPointer<ShowAttributeDelegate>(attr.show);
+            int length = showFunc(_devicePtr, IntPtr.Zero, buffer);
+            
+            Logger.Debug($"GetPollRate returned {length} bytes: {BitConverter.ToString(buffer, 0, Math.Min(length, 20))}");
+            
+            if (length > 0)
+            {
+                // Try to parse as string first (some drivers return it as text)
+                string pollRateStr = Encoding.ASCII.GetString(buffer, 0, length).TrimEnd('\0', '\n', '\r');
+                if (int.TryParse(pollRateStr, out int pollRate))
+                {
+                    Logger.Debug($"Parsed poll rate from string: {pollRate}");
+                    return pollRate;
+                }
+                
+                // If string parsing fails, try reading as binary (byte value)
+                if (length >= 1)
+                {
+                    int pollRateByte = buffer[0];
+                    Logger.Debug($"Parsed poll rate from byte: {pollRateByte}");
+                    return pollRateByte;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error reading poll rate");
+        }
+
+        return null;
     }
 
     public IReadOnlyDictionary<string, DeviceAttribute> GetAllAttributes() => _attributes;

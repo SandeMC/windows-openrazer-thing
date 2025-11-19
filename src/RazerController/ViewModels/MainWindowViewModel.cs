@@ -30,31 +30,39 @@ public partial class MainWindowViewModel : ViewModelBase
             // Load current DPI value if supported
             if (value.SupportsDPI)
             {
-                var dpiStr = value.Device.GetDPI();
-                if (!string.IsNullOrEmpty(dpiStr) && int.TryParse(dpiStr, out int currentDpi))
+                var currentDpi = value.Device.GetDPI();
+                if (currentDpi.HasValue)
                 {
-                    DpiValue = currentDpi;
-                    Logger.Debug($"Loaded current DPI: {currentDpi}");
+                    DpiValue = currentDpi.Value;
+                    Logger.Info($"Loaded current DPI: {currentDpi.Value}");
+                }
+                else
+                {
+                    Logger.Warn("Failed to read current DPI from device");
                 }
             }
             
             // Load current poll rate if supported
             if (value.SupportsPollRate)
             {
-                var pollRateStr = value.Device.GetPollRate();
-                if (!string.IsNullOrEmpty(pollRateStr) && int.TryParse(pollRateStr, out int currentPollRate))
+                var currentPollRate = value.Device.GetPollRate();
+                if (currentPollRate.HasValue)
                 {
-                    PollRate = currentPollRate;
+                    PollRate = currentPollRate.Value;
                     // Set the selected index to match the poll rate
                     for (int i = 0; i < PollRateOptions.Length; i++)
                     {
-                        if (PollRateOptions[i] == currentPollRate)
+                        if (PollRateOptions[i] == currentPollRate.Value)
                         {
                             SelectedPollRateIndex = i;
                             break;
                         }
                     }
-                    Logger.Debug($"Loaded current poll rate: {currentPollRate}");
+                    Logger.Info($"Loaded current poll rate: {currentPollRate.Value}Hz");
+                }
+                else
+                {
+                    Logger.Warn("Failed to read current poll rate from device");
                 }
             }
         }
@@ -155,16 +163,26 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (SelectedDevice?.Device == null) return;
 
-        bool success = SelectedDevice.Device.SetStaticColor(RedValue, GreenValue, BlueValue);
-        if (success)
+        try
         {
-            SelectedDevice.Device.SetLogoStaticColor(RedValue, GreenValue, BlueValue);
-            SelectedDevice.Device.SetScrollStaticColor(RedValue, GreenValue, BlueValue);
-            StatusMessage = $"Set color to RGB({RedValue}, {GreenValue}, {BlueValue})";
+            Logger.Info($"Setting static color to RGB({RedValue}, {GreenValue}, {BlueValue})");
+            bool success = SelectedDevice.Device.SetStaticColor(RedValue, GreenValue, BlueValue);
+            
+            if (success)
+            {
+                StatusMessage = $"Set color to RGB({RedValue}, {GreenValue}, {BlueValue})";
+                Logger.Info("Static color set successfully");
+            }
+            else
+            {
+                StatusMessage = "Failed to set color - attribute may not be supported";
+                Logger.Warn("Failed to set static color");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            StatusMessage = "Failed to set color";
+            Logger.Error(ex, "Error setting static color");
+            StatusMessage = $"Error setting color: {ex.Message}";
         }
     }
 
@@ -173,8 +191,19 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (SelectedDevice?.Device == null) return;
 
-        bool success = SelectedDevice.Device.SetSpectrumEffect();
-        StatusMessage = success ? "Set spectrum effect" : "Failed to set spectrum effect";
+        try
+        {
+            Logger.Info("Setting spectrum effect");
+            bool success = SelectedDevice.Device.SetSpectrumEffect();
+            StatusMessage = success ? "Set spectrum effect" : "Failed to set spectrum effect - attribute may not be supported";
+            if (success) Logger.Info("Spectrum effect set successfully");
+            else Logger.Warn("Failed to set spectrum effect");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error setting spectrum effect");
+            StatusMessage = $"Error setting spectrum effect: {ex.Message}";
+        }
     }
 
     [RelayCommand]
@@ -182,8 +211,19 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (SelectedDevice?.Device == null) return;
 
-        bool success = SelectedDevice.Device.SetBreathEffect(RedValue, GreenValue, BlueValue);
-        StatusMessage = success ? "Set breath effect" : "Failed to set breath effect";
+        try
+        {
+            Logger.Info($"Setting breath effect with RGB({RedValue}, {GreenValue}, {BlueValue})");
+            bool success = SelectedDevice.Device.SetBreathEffect(RedValue, GreenValue, BlueValue);
+            StatusMessage = success ? "Set breath effect" : "Failed to set breath effect - attribute may not be supported";
+            if (success) Logger.Info("Breath effect set successfully");
+            else Logger.Warn("Failed to set breath effect");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error setting breath effect");
+            StatusMessage = $"Error setting breath effect: {ex.Message}";
+        }
     }
 
     [RelayCommand]
@@ -191,8 +231,27 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (SelectedDevice?.Device == null) return;
 
-        bool success = SelectedDevice.Device.SetNoneEffect();
-        StatusMessage = success ? "Turned off lighting" : "Failed to turn off lighting";
+        try
+        {
+            Logger.Info("Turning off lighting");
+            bool success = SelectedDevice.Device.SetNoneEffect();
+            
+            // As a failsafe, also try setting brightness to 0
+            if (!success || true) // Always try brightness as backup
+            {
+                Logger.Info("Also setting brightness to 0 as failsafe");
+                SelectedDevice.Device.SetBrightness(0);
+            }
+            
+            StatusMessage = success ? "Turned off lighting" : "Failed to turn off lighting - tried setting brightness to 0 as failsafe";
+            if (success) Logger.Info("Lighting turned off successfully");
+            else Logger.Warn("Failed to turn off lighting");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error turning off lighting");
+            StatusMessage = $"Error turning off lighting: {ex.Message}";
+        }
     }
 
     [RelayCommand]
@@ -214,8 +273,19 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        bool success = SelectedDevice.Device.SetDPI(DpiValue);
-        StatusMessage = success ? $"Set DPI to {DpiValue}" : "Failed to set DPI";
+        try
+        {
+            Logger.Info($"Setting DPI to {DpiValue}");
+            bool success = SelectedDevice.Device.SetDPI(DpiValue);
+            StatusMessage = success ? $"Set DPI to {DpiValue}" : "Failed to set DPI";
+            if (success) Logger.Info($"DPI set to {DpiValue} successfully");
+            else Logger.Warn($"Failed to set DPI to {DpiValue}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, $"Error setting DPI to {DpiValue}");
+            StatusMessage = $"Error setting DPI: {ex.Message}";
+        }
     }
 
     [RelayCommand]
@@ -228,12 +298,23 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        // Get the poll rate from the selected index
-        if (SelectedPollRateIndex >= 0 && SelectedPollRateIndex < PollRateOptions.Length)
+        try
         {
-            int pollRate = PollRateOptions[SelectedPollRateIndex];
-            bool success = SelectedDevice.Device.SetPollRate(pollRate);
-            StatusMessage = success ? $"Set poll rate to {pollRate}Hz" : "Failed to set poll rate";
+            // Get the poll rate from the selected index
+            if (SelectedPollRateIndex >= 0 && SelectedPollRateIndex < PollRateOptions.Length)
+            {
+                int pollRate = PollRateOptions[SelectedPollRateIndex];
+                Logger.Info($"Setting poll rate to {pollRate}Hz");
+                bool success = SelectedDevice.Device.SetPollRate(pollRate);
+                StatusMessage = success ? $"Set poll rate to {pollRate}Hz" : "Failed to set poll rate";
+                if (success) Logger.Info($"Poll rate set to {pollRate}Hz successfully");
+                else Logger.Warn($"Failed to set poll rate to {pollRate}Hz");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error setting poll rate");
+            StatusMessage = $"Error setting poll rate: {ex.Message}";
         }
     }
 }
