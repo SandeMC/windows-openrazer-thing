@@ -82,9 +82,55 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- RGB Lighting Controls -->
+                    <!-- Mouse Controls - MOVED ABOVE RGB -->
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10"
+                            IsVisible="{Binding SelectedDevice.SupportsDPI}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Mouse Settings" FontSize="16" FontWeight="Bold"/>
+                            
+                            <!-- DPI Control with Slider -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="DPI:" FontWeight="Bold"/>
+                                <Slider Minimum="100" Maximum="20000" 
+                                        Value="{Binding DpiValue}" 
+                                        TickFrequency="100" 
+                                        IsSnapToTickEnabled="False"
+                                        TickPlacement="BottomRight"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <NumericUpDown Grid.Column="0" Minimum="100" Maximum="20000" Increment="100"
+                                                   Value="{Binding DpiValue}" FormatString="N0"/>
+                                    <Button Grid.Column="1" Content="Set DPI" Command="{Binding SetDPICommand}" Margin="10,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Poll Rate Control with Slider -->
+                            <StackPanel Spacing="5" IsVisible="{Binding SelectedDevice.SupportsPollRate}">
+                                <TextBlock Text="Polling Rate (Hz):" FontWeight="Bold"/>
+                                <Slider Minimum="0" Maximum="{Binding PollRateMaxIndex}" 
+                                        Value="{Binding PollRateSliderIndex}" 
+                                        TickFrequency="1" 
+                                        IsSnapToTickEnabled="True"
+                                        TickPlacement="BottomRight"
+                                        Ticks="{Binding PollRateTicks}"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <ComboBox Grid.Column="0" 
+                                              ItemsSource="{Binding PollRateOptions}"
+                                              SelectedIndex="{Binding SelectedPollRateIndex}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding StringFormat='{}{0} Hz'}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Grid.Column="1" Content="Set Poll Rate" Command="{Binding SetPollRateCommand}" Margin="10,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- RGB Lighting Controls - MOVED BELOW MOUSE SETTINGS -->
                     <Border BorderBrush="Gray" BorderThickness="1" Padding="10" 
-                            IsEnabled="{Binding SelectedDevice.SupportsRGB}">
+                            IsVisible="{Binding SelectedDevice.SupportsRGB}">
                         <StackPanel Spacing="10">
                             <TextBlock Text="RGB Lighting" FontSize="16" FontWeight="Bold"/>
                             
@@ -119,57 +165,26 @@
                                 </Border>
                             </StackPanel>
 
-                            <!-- Effect Buttons -->
+                            <!-- Effect Buttons - only show supported effects -->
                             <StackPanel Orientation="Horizontal" Spacing="5">
-                                <Button Content="Set Static Color" Command="{Binding SetStaticColorCommand}"/>
-                                <Button Content="Spectrum Effect" Command="{Binding SetSpectrumCommand}"/>
-                                <Button Content="Breath Effect" Command="{Binding SetBreathCommand}"/>
-                                <Button Content="Turn Off" Command="{Binding TurnOffCommand}"/>
+                                <Button Content="Set Static Color" Command="{Binding SetStaticColorCommand}" 
+                                        IsVisible="{Binding SelectedDevice.SupportsStaticColor}"/>
+                                <Button Content="Spectrum Effect" Command="{Binding SetSpectrumCommand}"
+                                        IsVisible="{Binding SelectedDevice.SupportsSpectrum}"/>
+                                <Button Content="Breath Effect" Command="{Binding SetBreathCommand}"
+                                        IsVisible="{Binding SelectedDevice.SupportsBreath}"/>
+                                <Button Content="Turn Off" Command="{Binding TurnOffCommand}"
+                                        IsVisible="{Binding SelectedDevice.SupportsNoneEffect}"/>
                             </StackPanel>
 
                             <!-- Brightness Control -->
-                            <StackPanel Spacing="5" IsEnabled="{Binding SelectedDevice.SupportsBrightness}">
+                            <StackPanel Spacing="5" IsVisible="{Binding SelectedDevice.SupportsBrightness}">
                                 <TextBlock Text="Brightness:" FontWeight="Bold"/>
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <Slider Grid.Column="0" Minimum="0" Maximum="255" 
                                             Value="{Binding Brightness}" TickFrequency="1" IsSnapToTickEnabled="True"/>
                                     <TextBlock Grid.Column="1" Text="{Binding Brightness}" Width="40" Margin="10,0"/>
                                     <Button Grid.Column="2" Content="Apply" Command="{Binding SetBrightnessCommand}"/>
-                                </Grid>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Mouse Controls -->
-                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10"
-                            IsVisible="{Binding SelectedDevice.SupportsDPI}">
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="Mouse Settings" FontSize="16" FontWeight="Bold"/>
-                            
-                            <!-- DPI Control -->
-                            <StackPanel Spacing="5">
-                                <TextBlock Text="DPI:" FontWeight="Bold"/>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <NumericUpDown Grid.Column="0" Minimum="100" Maximum="20000" Increment="100"
-                                                   Value="{Binding DpiValue}" FormatString="N0"/>
-                                    <Button Grid.Column="1" Content="Set DPI" Command="{Binding SetDPICommand}" Margin="10,0,0,0"/>
-                                </Grid>
-                            </StackPanel>
-
-                            <!-- Poll Rate Control -->
-                            <StackPanel Spacing="5" IsVisible="{Binding SelectedDevice.SupportsPollRate}">
-                                <TextBlock Text="Polling Rate (Hz):" FontWeight="Bold"/>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <ComboBox Grid.Column="0" 
-                                              ItemsSource="{Binding PollRateOptions}"
-                                              SelectedIndex="{Binding SelectedPollRateIndex}">
-                                        <ComboBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding StringFormat='{}{0} Hz'}"/>
-                                            </DataTemplate>
-                                        </ComboBox.ItemTemplate>
-                                    </ComboBox>
-                                    <Button Grid.Column="1" Content="Set Poll Rate" Command="{Binding SetPollRateCommand}" Margin="10,0,0,0"/>
                                 </Grid>
                             </StackPanel>
                         </StackPanel>

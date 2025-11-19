@@ -343,7 +343,50 @@ public class RazerDevice
         // For example, 800 DPI = 0x0320 = bytes [0x03, 0x20, 0x03, 0x20]
         byte dpiHighByte = (byte)((dpi >> 8) & 0xFF);
         byte dpiLowByte = (byte)(dpi & 0xFF);
-        return WriteAttribute("dpi", new[] { dpiHighByte, dpiLowByte, dpiHighByte, dpiLowByte });
+        bool success = WriteAttribute("dpi", new[] { dpiHighByte, dpiLowByte, dpiHighByte, dpiLowByte });
+        
+        // Also update DPI stages if the attribute exists
+        if (success && HasAttribute("dpi_stages"))
+        {
+            SetDPIStages(dpi);
+        }
+        
+        return success;
+    }
+    
+    public bool SetDPIStages(int dpi)
+    {
+        if (DeviceType != RazerDeviceType.Mouse)
+            return false;
+        
+        if (!HasAttribute("dpi_stages"))
+            return false;
+        
+        // Set stages at 400, 800, 1600, 3200, 6400
+        int[] stages = { 400, 800, 1600, 3200, 6400 };
+        
+        // Find which stage the current DPI is closest to and include it
+        List<int> stagesList = stages.ToList();
+        if (!stagesList.Contains(dpi))
+        {
+            // Add current DPI to stages and sort
+            stagesList.Add(dpi);
+            stagesList.Sort();
+        }
+        
+        // Format as bytes: count byte + pairs of DPI values (high, low)
+        List<byte> stageBytes = new List<byte>();
+        stageBytes.Add((byte)stagesList.Count); // Number of stages
+        
+        foreach (int stageDpi in stagesList)
+        {
+            byte highByte = (byte)((stageDpi >> 8) & 0xFF);
+            byte lowByte = (byte)(stageDpi & 0xFF);
+            stageBytes.Add(highByte);
+            stageBytes.Add(lowByte);
+        }
+        
+        return WriteAttribute("dpi_stages", stageBytes.ToArray());
     }
 
     public int? GetDPI()

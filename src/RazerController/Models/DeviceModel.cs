@@ -17,19 +17,26 @@ public class DeviceModel
     public bool SupportsBattery => Device.HasAttribute("charge_level") || Device.HasAttribute("charge_status");
     
     // Check for any RGB effect attributes across all device types
-    public bool SupportsRGB => Device.HasAttribute("matrix_effect_static") || 
-                               Device.HasAttribute("matrix_effect_breath") ||
-                               Device.HasAttribute("matrix_effect_spectrum") ||
-                               Device.HasAttribute("matrix_effect_none") ||
-                               Device.HasAttribute("logo_matrix_effect_static") || 
-                               Device.HasAttribute("logo_matrix_effect_breath") ||
-                               Device.HasAttribute("logo_matrix_effect_spectrum") ||
-                               Device.HasAttribute("logo_matrix_effect_none") ||
-                               Device.HasAttribute("scroll_matrix_effect_static") ||
-                               Device.HasAttribute("scroll_matrix_effect_breath") ||
-                               Device.HasAttribute("scroll_matrix_effect_spectrum") ||
-                               Device.HasAttribute("scroll_matrix_effect_none") ||
-                               Device.HasAttribute("backlight_led_state");
+    public bool SupportsRGB => SupportsStaticColor || SupportsSpectrum || SupportsBreath || SupportsNoneEffect;
+    
+    // Individual RGB effect support checks
+    public bool SupportsStaticColor => Device.HasAttribute("matrix_effect_static") || 
+                                        Device.HasAttribute("logo_matrix_effect_static") || 
+                                        Device.HasAttribute("scroll_matrix_effect_static") ||
+                                        Device.HasAttribute("backlight_led_state");
+    
+    public bool SupportsSpectrum => Device.HasAttribute("matrix_effect_spectrum") ||
+                                     Device.HasAttribute("logo_matrix_effect_spectrum") ||
+                                     Device.HasAttribute("scroll_matrix_effect_spectrum");
+    
+    public bool SupportsBreath => Device.HasAttribute("matrix_effect_breath") ||
+                                   Device.HasAttribute("logo_matrix_effect_breath") ||
+                                   Device.HasAttribute("scroll_matrix_effect_breath");
+    
+    public bool SupportsNoneEffect => Device.HasAttribute("matrix_effect_none") ||
+                                       Device.HasAttribute("logo_matrix_effect_none") ||
+                                       Device.HasAttribute("scroll_matrix_effect_none") ||
+                                       Device.HasAttribute("backlight_led_state");
     
     // Check for any brightness control attributes across all device types
     public bool SupportsBrightness => Device.HasAttribute("matrix_brightness") || 
