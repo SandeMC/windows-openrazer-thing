@@ -1,0 +1,173 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RazerController.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+        x:Class="RazerController.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Razer Controller"
+        Width="900" Height="650"
+        MinWidth="700" MinHeight="500">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="10">
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+            <Button Content="Initialize Devices" Command="{Binding InitializeCommand}" />
+            <Button Content="Refresh" Command="{Binding RefreshCommand}" IsEnabled="{Binding IsInitialized}" />
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" ColumnDefinitions="250,*">
+            <!-- Device List -->
+            <Border Grid.Column="0" BorderBrush="Gray" BorderThickness="1" Padding="5" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="Devices" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <ListBox ItemsSource="{Binding Devices}" 
+                             SelectedItem="{Binding SelectedDevice}"
+                             Height="500">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding DeviceType}" FontSize="11" Foreground="Gray"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+
+            <!-- Device Controls -->
+            <ScrollViewer Grid.Column="1">
+                <StackPanel IsEnabled="{Binding SelectedDevice, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="15">
+                    
+                    <!-- Device Info -->
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="Device Information" FontSize="16" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="Name:" FontWeight="Bold" Width="120"/>
+                                <TextBlock Text="{Binding SelectedDevice.Name}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="Type:" FontWeight="Bold" Width="120"/>
+                                <TextBlock Text="{Binding SelectedDevice.DeviceType}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="Serial Number:" FontWeight="Bold" Width="120"/>
+                                <TextBlock Text="{Binding SelectedDevice.SerialNumber}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <TextBlock Text="Firmware:" FontWeight="Bold" Width="120"/>
+                                <TextBlock Text="{Binding SelectedDevice.FirmwareVersion}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- RGB Lighting Controls -->
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10" 
+                            IsEnabled="{Binding SelectedDevice.SupportsRGB}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="RGB Lighting" FontSize="16" FontWeight="Bold"/>
+                            
+                            <!-- Color Selection -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Color (RGB):" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="5">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Red:" VerticalAlignment="Center"/>
+                                    <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="255" 
+                                            Value="{Binding RedValue}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding RedValue}" Width="40"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Green:" VerticalAlignment="Center"/>
+                                    <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="255" 
+                                            Value="{Binding GreenValue}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding GreenValue}" Width="40"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Blue:" VerticalAlignment="Center"/>
+                                    <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="255" 
+                                            Value="{Binding BlueValue}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding BlueValue}" Width="40"/>
+                                </Grid>
+                                
+                                <!-- Color Preview -->
+                                <Border Width="100" Height="40" Margin="0,5,0,0">
+                                    <Border.Background>
+                                        <SolidColorBrush Color="{Binding PreviewColor}"/>
+                                    </Border.Background>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Effect Buttons -->
+                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                <Button Content="Set Static Color" Command="{Binding SetStaticColorCommand}"/>
+                                <Button Content="Spectrum Effect" Command="{Binding SetSpectrumCommand}"/>
+                                <Button Content="Breath Effect" Command="{Binding SetBreathCommand}"/>
+                                <Button Content="Turn Off" Command="{Binding TurnOffCommand}"/>
+                            </StackPanel>
+
+                            <!-- Brightness Control -->
+                            <StackPanel Spacing="5" IsEnabled="{Binding SelectedDevice.SupportsBrightness}">
+                                <TextBlock Text="Brightness:" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <Slider Grid.Column="0" Minimum="0" Maximum="255" 
+                                            Value="{Binding Brightness}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Brightness}" Width="40" Margin="10,0"/>
+                                    <Button Grid.Column="2" Content="Apply" Command="{Binding SetBrightnessCommand}"/>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Mouse Controls -->
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10"
+                            IsVisible="{Binding SelectedDevice.SupportsDPI}">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Mouse Settings" FontSize="16" FontWeight="Bold"/>
+                            
+                            <!-- DPI Control -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="DPI:" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <NumericUpDown Grid.Column="0" Minimum="100" Maximum="20000" Increment="100"
+                                                   Value="{Binding DpiValue}" FormatString="N0"/>
+                                    <Button Grid.Column="1" Content="Set DPI" Command="{Binding SetDPICommand}" Margin="10,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Poll Rate Control -->
+                            <StackPanel Spacing="5" IsVisible="{Binding SelectedDevice.SupportsPollRate}">
+                                <TextBlock Text="Polling Rate (Hz):" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <ComboBox Grid.Column="0" 
+                                              ItemsSource="{Binding PollRateOptions}"
+                                              SelectedIndex="{Binding SelectedPollRateIndex}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding StringFormat='{}{0} Hz'}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Button Grid.Column="1" Content="Set Poll Rate" Command="{Binding SetPollRateCommand}" Margin="10,0,0,0"/>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="0,1,0,0" Padding="5" Margin="0,10,0,0">
+            <TextBlock Text="{Binding StatusMessage}" FontStyle="Italic"/>
+        </Border>
+    </Grid>
+
+</Window>
