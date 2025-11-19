@@ -36,7 +36,7 @@ jobs:
         if [ ! -f "openrazer/driver/razercommon.c" ]; then
           echo "Submodule init failed, cloning openrazer manually..."
           rm -rf openrazer
-          git clone https://github.com/tpoechtrager/openrazer.git openrazer
+          git clone https://github.com/SandeMC/openrazer.git openrazer
         fi
       shell: bash
     
