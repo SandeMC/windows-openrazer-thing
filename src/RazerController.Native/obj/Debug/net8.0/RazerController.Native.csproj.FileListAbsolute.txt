@@ -1,0 +1,6 @@
+/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/obj/Debug/net8.0/RazerController.Native.csproj.AssemblyReference.cache
+/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/obj/Debug/net8.0/RazerController.Native.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/obj/Debug/net8.0/RazerController.Native.AssemblyInfoInputs.cache
+/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/obj/Debug/net8.0/RazerController.Native.AssemblyInfo.cs
+/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/obj/Debug/net8.0/RazerController.Native.csproj.CoreCompileInputs.cache
+/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/obj/Debug/net8.0/RazerController.Native.sourcelink.json
