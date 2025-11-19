@@ -1,16 +1,15 @@
 # Windows OpenRazer Thing
 
-> **⚠️ DISCLAIMER - 100% AI-GENERATED PROOF OF CONCEPT**
+> [!CAUTION]
+> **THIS APPLICATION IS AN AI-MADE PROOF OF CONCEPT**
 > 
-> This is a proof-of-concept application that has been **100% vibecoded** using AI assistance. It may not work correctly, and **all maintenance and development will only be done with AI**. Use at your own risk.
+> This is a proof-of-concept application that has been **entirely vibecoded** (excluding existing libraries - such as [openrazer-win32](https://github.com/tpoechtrager/openrazer-win32) - which are a base for this application. It may not work correctly, and **will likely not be maintained**. Use at your own risk.
 >
 > **Key Limitations:**
 > - Device driver code and database cutoff: **May 23, 2025**
 > - Only tested with: **Razer DeathAdder V3** and **Razer DeathAdder Essential 2021**
-> - Goal: Replace Razer Synapse with an open-source implementation
-> - This is experimental software - expect bugs and incomplete features
-
-## About
+> - Only designed for mice. Most features untested due to lack of hardware ownership.
+> - RGB support very rudimentary. Use [OpenRGB](https://openrgb.org) instead.
 
 ## About
 
@@ -19,42 +18,35 @@ A Windows application for controlling Razer devices without Synapse, using the o
 ## Features
 
 ### Device Support
-- ✅ Keyboards
-- ✅ Mice  
-- ✅ Accessories (mousepads, etc.)
-- ✅ Headsets
-- ✅ Automatic device detection on startup
-- ✅ Plug and play - auto-detects when devices are connected
+- Keyboards [untested]
+- Mice  
+- Accessories (mousepads, etc.) [untested]
+- Headsets [untested]
+- Automatic device detection on startup
+- Plug and play - just works without any extra drivers.
 
 ### Mouse Settings
-- ✅ DPI configuration with slider (100-20000 DPI)
-  - Smooth slider with standard anchor points (400, 800, 1600, 3200, 6400)
+- DPI configuration with a slider (100-35000 DPI)
   - Allows selecting any intermediate value
-  - Automatically updates DPI stages
-- ✅ Polling rate configuration (125Hz - 8000Hz on compatible devices)
+- Polling rate configuration (125Hz - 8000Hz on compatible devices)
   - Slider with device-supported rates as anchor points
   - Dynamically detects supported polling rates
-- ✅ Real-time value updates (when app is in foreground)
+- Quick access to Windows sensitivity and mouse acceleration settings
 
 ### RGB Lighting Control
-- ✅ Static colors with RGB sliders and color preview
-- ✅ Spectrum effect (rainbow cycling)
-- ✅ Breathing effect with custom color
-- ✅ Turn off lighting
-- ✅ Brightness control (0-255)
-- ✅ Auto-enables RGB when applying effects
-- ✅ Smart UI - only shows effects supported by current device
+- Static colors with RGB sliders and color preview
+- Spectrum effect (rainbow cycling)
+- Breathing effect with custom color
+- Turn off RGB completely
+- Brightness control (0-255)
+- Only shows effects supported by current device
 
 ### Power Management
-- ✅ Battery level display for wireless devices
-- ✅ Charging status indicator
-- ✅ Automatic updates every second (when app is active)
+- Battery level display for wireless devices [untested]
+- Charging status indicator [untested]
 
 ### System Integration
-- ✅ System tray icon with minimize-to-tray functionality
-- ✅ Foreground-only polling (saves resources when minimized)
-- ✅ Configurable logging (INFO by default, DEBUG mode available)
-- ✅ Clean, organized UI with collapsible sections
+- System tray icon for quick access to the app
 
 ## Screenshots
 
@@ -63,16 +55,15 @@ Screenshots will be added after the application is built and running.
 ## Requirements
 
 - Windows 10/11 (64-bit)
-- .NET 9.0 Runtime (included in self-contained builds)
-- OpenRazer Win32 DLL (included)
+- Razer peripherals
 
 ## Installation
 
 ### Option 1: Pre-built Release (Recommended)
 
 1. Download the latest release from the [Releases](../../releases) page
-2. Extract the ZIP file
-3. Run `RazerController.exe`
+2. Extract the ZIP file of the desired version
+3. Run `WindowsOpenrazerThing.exe`
 
 ### Option 2: Build from Source
 
@@ -82,7 +73,7 @@ Screenshots will be added after the application is built and running.
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - Visual Studio 2019 or later (for building the native DLL)
 
-#### Building the Native DLL
+#### Building the OpenRazer DLL
 
 1. Open `native/OpenRazer.sln` in Visual Studio
 2. Select your target platform (x64 or x86)
@@ -93,7 +84,7 @@ Screenshots will be added after the application is built and running.
 
 ```bash
 # Clone the repository
-git clone https://github.com/SandeMC/windows-openrazer-thing.git
+git clone https://github.com/SandeMC/windows-openrazer-thing.git --recursive
 cd windows-openrazer-thing
 
 # Check if you have all prerequisites
@@ -121,7 +112,7 @@ dotnet publish src/RazerController/RazerController.csproj -c Release -r win-x64 
 
 ## Quick Start
 
-1. Launch the Application: Run `WindowsOpenrazerThing.exe` (or `RazerController.exe`)
+1. Launch the Application: Run `WindowsOpenrazerThing.exe
 2. Devices Auto-Initialize: The app automatically detects your Razer devices on startup
 3. Select a Device: Click on a device in the left panel (first device is auto-selected)
 4. Control Your Device:
@@ -134,97 +125,6 @@ dotnet publish src/RazerController/RazerController.csproj -c Release -r win-x64 
      - Adjust brightness as needed
    - Changes are applied immediately when you click "Set" buttons
 
-## Usage
-
-### RGB Lighting
-
-Note: For advanced RGB control, use Windows 11 built-in RGB settings or [OpenRGB](https://openrgb.org). This application provides basic lighting control only.
-
-- Static Color: Choose RGB values (sliders or textboxes) and click "Set Static Color"
-- Spectrum Effect: Rainbow cycling effect
-- Breath Effect: Pulsing effect with your chosen color
-- Turn Off: Disable all lighting
-- Brightness: Adjust the overall brightness (0-255)
-
-### Mouse Settings
-
-- **DPI Control**:
-  - Use the slider for quick adjustments
-  - Or type exact values in the number box (100-20000)
-  - Standard anchor points: 400, 800, 1600, 3200, 6400
-  - Automatically sets DPI stages for cycling with device buttons
-- **Polling Rate**:
-  - Dynamically detected from your device
-  - Slider shows only rates your device supports
-  - Typical rates: 125Hz, 250Hz, 500Hz, 1000Hz, 2000Hz, 4000Hz, 8000Hz
-- **Auto-Refresh**: Values update every second when app window is active
-
-### Battery Status (Wireless Devices)
-
-- Displays battery percentage
-- Shows charging status
-- Updates automatically
-
-### System Tray
-
-- The application minimizes to the system tray when closed (doesn't quit)
-- Click tray icon to restore the window
-- Right-click the tray icon for the menu:
-  - **Show**: Restore the main window
-  - **Exit**: Quit the application completely
-- Device values are polled once when opening the tray menu (silent, no log spam)
-
-## Supported Devices
-
-This application supports all devices compatible with OpenRazer, including:
-
-- Razer Keyboards (BlackWidow, Huntsman, etc.)
-- Razer Mice (DeathAdder, Viper, Mamba, etc.)
-- Razer Accessories (Mouse mats, etc.)
-- Razer Headsets (Kraken series)
-
-For a complete list, see the [OpenRazer device list](https://openrazer.github.io/#devices).
-
-## Troubleshooting
-
-### "Failed to initialize" or "DLL not found" Error
-
-**Check Required DLL:**
-The application requires the OpenRazer DLL in the same folder as the executable:
-- `OpenRazer64.dll` (or `OpenRazer.dll` for x86)
-
-Note: The hidapi library is now statically linked, so no separate hidapi.dll is required.
-
-**If DLL is missing:**
-1. Run the build script: `.\build.ps1` (automatically copies the DLL)
-2. Or manually copy from:
-   - `native/OpenRazer64.dll` → application folder
-
-**Other steps:**
-- Ensure your Razer device is properly connected
-- Try running as Administrator
-- Check the `logs/` folder for detailed error messages
-
-### Debug Logging
-
-By default, only INFO level and above is logged. To enable DEBUG logging:
-1. Create an empty file named `DEBUG` in the application folder (same folder as the .exe)
-2. Restart the application
-3. Debug logs will now be included in the log files
-
-To disable debug logging, simply delete the `DEBUG` file and restart.
-
-### Device Not Detected
-
-- Unplug and reconnect your device
-- Click the "Refresh" button
-- Restart the application
-
-### Changes Not Applied
-
-- Some devices may take a moment to respond
-- Try the command again
-- Check if your device supports the feature you're trying to use
 
 ## Project Structure
 
@@ -259,17 +159,7 @@ windows-openrazer-thing/
   - CommunityToolkit.Mvvm (MVVM helpers)
   - NLog (logging framework)
   - System.Drawing.Common (color handling)
-- **Driver**: Based on [openrazer-win32](https://github.com/tpoechtrager/openrazer-win32)
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- **Driver**: Based on [openrazer-win32](https://github.com/SandeMC/openrazer-win32)
 
 ## License
 
@@ -283,13 +173,11 @@ This project uses the OpenRazer Win32 driver, which is based on the OpenRazer Li
 - **OpenRazer Win32**: [tpoechtrager](https://github.com/tpoechtrager/openrazer-win32) (based on CalcProgrammer1's original work)
 - **OpenRazer**: The [OpenRazer Team](https://github.com/openrazer/openrazer)
 - **UI Framework**: [Avalonia Team](https://github.com/AvaloniaUI/Avalonia)
-- **Application**: SandeMC (with 100% AI assistance)
 
 ## Acknowledgments
 
 This project would not be possible without:
 - The OpenRazer project for reverse-engineering Razer protocols
 - CalcProgrammer1's original Windows port of OpenRazer
-- tpoechtrager's maintained fork of openrazer-win32 (driver code cutoff: May 23, 2025)
+- tpoechtrager's more up-to-date fork of openrazer-win32
 - The Avalonia UI framework for cross-platform UI capabilities
-- AI assistance for all development and maintenance
