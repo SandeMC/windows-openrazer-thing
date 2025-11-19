@@ -126,8 +126,19 @@ public class TrayIconService
             // Add device-specific items for the first mouse device found
             if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm)
             {
+                Logger.Debug($"Building tray menu. Total devices: {vm.Devices.Count}");
+                
                 // Find the first mouse device
                 var mouseDevice = vm.Devices.FirstOrDefault(d => d.Device.DeviceType == RazerDeviceType.Mouse);
+                
+                if (mouseDevice != null)
+                {
+                    Logger.Debug($"Found mouse device: {mouseDevice.Name}");
+                }
+                else
+                {
+                    Logger.Debug("No mouse device found for tray menu");
+                }
                 
                 if (mouseDevice != null)
                 {
