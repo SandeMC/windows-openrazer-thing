@@ -33,7 +33,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedDeviceChanged(DeviceModel? value)
     {
-        // Stop any existing polling
+        // Stop any existing polling (polling disabled per requirements)
         StopDevicePolling();
         
         if (value?.Device != null)
@@ -41,8 +41,7 @@ public partial class MainWindowViewModel : ViewModelBase
             // Load all device values initially
             LoadDeviceValues(value);
             
-            // Start polling for updates
-            StartDevicePolling();
+            // No longer start automatic polling - user must use refresh button
         }
     }
 
@@ -253,6 +252,17 @@ public partial class MainWindowViewModel : ViewModelBase
             Devices.Add(new DeviceModel(device));
         }
         StatusMessage = $"Refreshed. Found {Devices.Count} device(s)";
+    }
+    
+    [RelayCommand]
+    private void RefreshDeviceValuesCommand()
+    {
+        if (SelectedDevice?.Device != null)
+        {
+            Logger.Info("Refreshing device values for selected device");
+            RefreshDeviceValues();
+            StatusMessage = "Device values refreshed";
+        }
     }
 
     [RelayCommand]
