@@ -146,6 +146,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private int _dpiValue = 800;
+    
+    [ObservableProperty]
+    private int _maxDpi = 35000; // Default max DPI, can be updated based on device capabilities
 
     [ObservableProperty]
     private int _pollRate = 1000;
@@ -775,6 +778,9 @@ public partial class MainWindowViewModel : ViewModelBase
                     IsCharging = isCharging;
                 }
             }
+            
+            // Refresh Windows mouse settings
+            LoadWindowsMouseSettings();
         }
         catch (Exception ex)
         {

@@ -95,13 +95,13 @@
                             <!-- DPI Control with Slider -->
                             <StackPanel Spacing="5">
                                 <TextBlock Text="DPI:" FontWeight="Bold"/>
-                                <Slider Minimum="100" Maximum="20000" 
+                                <Slider Minimum="100" Maximum="{Binding MaxDpi}" 
                                         Value="{Binding DpiValue}" 
                                         TickFrequency="100" 
                                         IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight"/>
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <NumericUpDown Grid.Column="0" Minimum="100" Maximum="20000" Increment="100"
+                                    <NumericUpDown Grid.Column="0" Minimum="100" Maximum="{Binding MaxDpi}" Increment="100"
                                                    Value="{Binding DpiValue}" FormatString="N0"/>
                                     <Button Grid.Column="1" Content="Set DPI" Command="{Binding SetDPICommand}" Margin="10,0,0,0"/>
                                 </Grid>
@@ -143,7 +143,10 @@
                                             IsSnapToTickEnabled="True"/>
                                     <TextBlock Grid.Column="1" Text="{Binding WindowsSensitivity}" Width="40" Margin="10,0"/>
                                 </Grid>
-                                <Button Content="Apply Sensitivity" Command="{Binding SetWindowsSensitivityCommand}"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0"/>
+                                    <Button Grid.Column="1" Content="Apply Sensitivity" Command="{Binding SetWindowsSensitivityCommand}"/>
+                                </Grid>
                             </StackPanel>
                             
                             <!-- Mouse Acceleration Toggle -->
