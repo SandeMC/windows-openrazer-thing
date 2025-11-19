@@ -12,7 +12,9 @@ public class DeviceModel
     public string FirmwareVersion => Device.FirmwareVersion ?? "N/A";
     
     public bool SupportsDPI => Device.DeviceType == RazerDeviceType.Mouse && Device.HasAttribute("dpi");
+    public bool SupportsDPIStages => Device.DeviceType == RazerDeviceType.Mouse && Device.HasAttribute("dpi_stages");
     public bool SupportsPollRate => Device.DeviceType == RazerDeviceType.Mouse && Device.HasAttribute("poll_rate");
+    public bool SupportsBattery => Device.HasAttribute("charge_level") || Device.HasAttribute("charge_status");
     
     // Check for any RGB effect attributes across all device types
     public bool SupportsRGB => Device.HasAttribute("matrix_effect_static") || 

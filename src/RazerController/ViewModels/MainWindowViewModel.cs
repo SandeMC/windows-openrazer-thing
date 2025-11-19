@@ -27,6 +27,21 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (value?.Device != null)
         {
+            // Load supported poll rates dynamically
+            if (value.SupportsPollRate)
+            {
+                var supportedRates = value.Device.GetSupportedPollRates();
+                if (supportedRates != null && supportedRates.Count > 0)
+                {
+                    PollRateOptions.Clear();
+                    foreach (var rate in supportedRates)
+                    {
+                        PollRateOptions.Add(rate);
+                    }
+                    Logger.Info($"Loaded supported poll rates: {string.Join(", ", supportedRates)}");
+                }
+            }
+            
             // Load current DPI value if supported
             if (value.SupportsDPI)
             {
@@ -50,7 +65,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 {
                     PollRate = currentPollRate.Value;
                     // Set the selected index to match the poll rate
-                    for (int i = 0; i < PollRateOptions.Length; i++)
+                    for (int i = 0; i < PollRateOptions.Count; i++)
                     {
                         if (PollRateOptions[i] == currentPollRate.Value)
                         {
@@ -64,6 +79,36 @@ public partial class MainWindowViewModel : ViewModelBase
                 {
                     Logger.Warn("Failed to read current poll rate from device");
                 }
+            }
+            
+            // Load current brightness if supported
+            if (value.SupportsBrightness)
+            {
+                var currentBrightness = value.Device.GetBrightness();
+                if (currentBrightness.HasValue)
+                {
+                    Brightness = currentBrightness.Value;
+                    Logger.Info($"Loaded current brightness: {currentBrightness.Value}");
+                }
+                else
+                {
+                    Logger.Warn("Failed to read current brightness from device");
+                }
+            }
+            
+            // Load battery info if supported
+            if (value.SupportsBattery)
+            {
+                BatteryLevel = value.Device.GetBatteryLevel();
+                BatteryStatus = value.Device.GetBatteryStatus();
+                IsCharging = value.Device.GetIsCharging();
+                Logger.Info($"Battery: {BatteryLevel}%, Status: {BatteryStatus}, Charging: {IsCharging}");
+            }
+            else
+            {
+                BatteryLevel = null;
+                BatteryStatus = null;
+                IsCharging = false;
             }
         }
     }
@@ -93,13 +138,19 @@ public partial class MainWindowViewModel : ViewModelBase
     private int _pollRate = 1000;
     
     [ObservableProperty]
-    private int _selectedPollRateIndex = 2; // Default to 1000 Hz (index 2)
+    private int _selectedPollRateIndex = 0;
     
-    // Standard poll rates supported by most Razer devices
-    // Note: Some newer devices support 2000Hz, 4000Hz, and 8000Hz, but these require
-    // device-specific driver support. The OpenRazer driver defaults to 500Hz for
-    // unsupported rates, so we limit options to the most commonly supported rates.
-    public int[] PollRateOptions { get; } = new[] { 125, 500, 1000 };
+    [ObservableProperty]
+    private ObservableCollection<int> _pollRateOptions = new();
+    
+    [ObservableProperty]
+    private int? _batteryLevel;
+    
+    [ObservableProperty]
+    private string? _batteryStatus;
+    
+    [ObservableProperty]
+    private bool _isCharging;
 
     public Color PreviewColor => Color.FromRgb(RedValue, GreenValue, BlueValue);
 
@@ -169,8 +220,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
         try
         {
-            Logger.Info($"Setting static color to RGB({RedValue}, {GreenValue}, {BlueValue})");
+            Logger.Info($"Setting static color to RGB({RedValue}, {GreenValue}, {BlueValue}) with brightness {Brightness}");
             bool success = SelectedDevice.Device.SetStaticColor(RedValue, GreenValue, BlueValue);
+            
+            // Apply brightness after setting effect
+            if (success && SelectedDevice.SupportsBrightness && Brightness > 0)
+            {
+                SelectedDevice.Device.SetBrightness(Brightness);
+                Logger.Info($"Applied brightness: {Brightness}");
+            }
             
             if (success)
             {
@@ -197,8 +255,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
         try
         {
-            Logger.Info("Setting spectrum effect");
+            Logger.Info($"Setting spectrum effect with brightness {Brightness}");
             bool success = SelectedDevice.Device.SetSpectrumEffect();
+            
+            // Apply brightness after setting effect
+            if (success && SelectedDevice.SupportsBrightness && Brightness > 0)
+            {
+                SelectedDevice.Device.SetBrightness(Brightness);
+                Logger.Info($"Applied brightness: {Brightness}");
+            }
+            
             StatusMessage = success ? "Set spectrum effect" : "Failed to set spectrum effect - attribute may not be supported";
             if (success) Logger.Info("Spectrum effect set successfully");
             else Logger.Warn("Failed to set spectrum effect");
@@ -217,8 +283,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
         try
         {
-            Logger.Info($"Setting breath effect with RGB({RedValue}, {GreenValue}, {BlueValue})");
+            Logger.Info($"Setting breath effect with RGB({RedValue}, {GreenValue}, {BlueValue}) and brightness {Brightness}");
             bool success = SelectedDevice.Device.SetBreathEffect(RedValue, GreenValue, BlueValue);
+            
+            // Apply brightness after setting effect
+            if (success && SelectedDevice.SupportsBrightness && Brightness > 0)
+            {
+                SelectedDevice.Device.SetBrightness(Brightness);
+                Logger.Info($"Applied brightness: {Brightness}");
+            }
+            
             StatusMessage = success ? "Set breath effect" : "Failed to set breath effect - attribute may not be supported";
             if (success) Logger.Info("Breath effect set successfully");
             else Logger.Warn("Failed to set breath effect");
@@ -333,7 +407,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             // Get the poll rate from the selected index
-            if (SelectedPollRateIndex >= 0 && SelectedPollRateIndex < PollRateOptions.Length)
+            if (SelectedPollRateIndex >= 0 && SelectedPollRateIndex < PollRateOptions.Count)
             {
                 int pollRate = PollRateOptions[SelectedPollRateIndex];
                 Logger.Info($"Setting poll rate to {pollRate}Hz");

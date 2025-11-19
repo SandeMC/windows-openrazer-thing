@@ -270,6 +270,40 @@ public class RazerDevice
         return success;
     }
 
+    public byte? GetBrightness()
+    {
+        // Try reading from different brightness attributes
+        string[] brightnessAttrs = new[] 
+        { 
+            "matrix_brightness", 
+            "logo_led_brightness", 
+            "scroll_led_brightness", 
+            "backlight_led_brightness",
+            "left_led_brightness",
+            "right_led_brightness",
+            "set_brightness"
+        };
+
+        foreach (var attr in brightnessAttrs)
+        {
+            try
+            {
+                string? brightnessStr = ReadAttribute(attr);
+                if (!string.IsNullOrEmpty(brightnessStr) && byte.TryParse(brightnessStr, out byte brightness))
+                {
+                    Logger.Debug($"Read brightness from {attr}: {brightness}");
+                    return brightness;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug(ex, $"Could not read brightness from {attr}");
+            }
+        }
+
+        return null;
+    }
+
     public bool SetBrightness(byte brightness)
     {
         // Try different brightness attributes based on what the device supports
@@ -408,6 +442,170 @@ public class RazerDevice
         }
 
         return null;
+    }
+
+    public List<int>? GetSupportedPollRates()
+    {
+        if (DeviceType != RazerDeviceType.Mouse)
+            return null;
+
+        // Try to read supported_poll_rates attribute if available
+        try
+        {
+            string? ratesStr = ReadAttribute("supported_poll_rates");
+            if (!string.IsNullOrEmpty(ratesStr))
+            {
+                // Parse comma-separated list of poll rates
+                var rates = new List<int>();
+                foreach (var rateStr in ratesStr.Split(',', ' ', '\n', '\r'))
+                {
+                    if (int.TryParse(rateStr.Trim(), out int rate) && rate > 0)
+                    {
+                        rates.Add(rate);
+                    }
+                }
+                if (rates.Count > 0)
+                {
+                    Logger.Debug($"Detected supported poll rates: {string.Join(", ", rates)}");
+                    return rates;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Could not read supported_poll_rates attribute");
+        }
+
+        // If supported_poll_rates is not available, return full range
+        Logger.Debug("supported_poll_rates attribute not available, returning full range");
+        return new List<int> { 125, 250, 500, 1000, 2000, 4000, 8000 };
+    }
+
+    public (int activeStage, List<(int x, int y)> stages)? GetDPIStages()
+    {
+        if (DeviceType != RazerDeviceType.Mouse)
+            return null;
+
+        try
+        {
+            if (!_attributes.TryGetValue("dpi_stages", out var attr) || attr.show == IntPtr.Zero)
+            {
+                Logger.Debug("dpi_stages attribute not found or not readable");
+                return null;
+            }
+
+            var buffer = new byte[256];
+            var showFunc = Marshal.GetDelegateForFunctionPointer<ShowAttributeDelegate>(attr.show);
+            int length = showFunc(_devicePtr, IntPtr.Zero, buffer);
+            
+            Logger.Debug($"GetDPIStages returned {length} bytes: {BitConverter.ToString(buffer, 0, Math.Min(length, 20))}");
+            
+            if (length >= 5) // At least 1 byte for active stage + 4 bytes for one stage (2 shorts)
+            {
+                int activeStage = buffer[0];
+                var stages = new List<(int x, int y)>();
+                
+                // Each stage is 4 bytes: 2 bytes for X DPI (big-endian), 2 bytes for Y DPI (big-endian)
+                int offset = 1;
+                while (offset + 3 < length)
+                {
+                    int dpiX = (buffer[offset] << 8) | buffer[offset + 1];
+                    int dpiY = (buffer[offset + 2] << 8) | buffer[offset + 3];
+                    
+                    if (dpiX > 0 || dpiY > 0) // Skip empty stages
+                    {
+                        stages.Add((dpiX, dpiY));
+                    }
+                    offset += 4;
+                }
+                
+                Logger.Debug($"Parsed DPI stages: active={activeStage}, stages={string.Join(", ", stages)}");
+                return (activeStage, stages);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error reading DPI stages");
+        }
+
+        return null;
+    }
+
+    public bool SetDPIStages(int activeStage, List<(int x, int y)> stages)
+    {
+        if (DeviceType != RazerDeviceType.Mouse)
+            return false;
+
+        if (stages.Count == 0 || stages.Count > 5 || activeStage < 1 || activeStage > stages.Count)
+        {
+            Logger.Warn($"Invalid DPI stages: activeStage={activeStage}, stageCount={stages.Count}");
+            return false;
+        }
+
+        try
+        {
+            // Format: 1 byte for active stage + 4 bytes per stage (X_high, X_low, Y_high, Y_low)
+            var data = new List<byte> { (byte)activeStage };
+            
+            foreach (var (x, y) in stages)
+            {
+                data.Add((byte)((x >> 8) & 0xFF));
+                data.Add((byte)(x & 0xFF));
+                data.Add((byte)((y >> 8) & 0xFF));
+                data.Add((byte)(y & 0xFF));
+            }
+            
+            Logger.Debug($"Setting DPI stages: active={activeStage}, stages={string.Join(", ", stages)}");
+            return WriteAttribute("dpi_stages", data.ToArray());
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error setting DPI stages");
+            return false;
+        }
+    }
+
+    public int? GetBatteryLevel()
+    {
+        try
+        {
+            string? levelStr = ReadAttribute("charge_level");
+            if (!string.IsNullOrEmpty(levelStr) && int.TryParse(levelStr, out int level))
+            {
+                Logger.Debug($"Battery level: {level}%");
+                return level;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Error reading battery level");
+        }
+        return null;
+    }
+
+    public string? GetBatteryStatus()
+    {
+        try
+        {
+            string? status = ReadAttribute("charge_status");
+            if (!string.IsNullOrEmpty(status))
+            {
+                Logger.Debug($"Battery status: {status}");
+                return status.Trim();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Error reading battery status");
+        }
+        return null;
+    }
+
+    public bool GetIsCharging()
+    {
+        string? status = GetBatteryStatus();
+        return status != null && (status.Contains("charging", StringComparison.OrdinalIgnoreCase) || 
+                                   status.Contains("full", StringComparison.OrdinalIgnoreCase));
     }
 
     public IReadOnlyDictionary<string, DeviceAttribute> GetAllAttributes() => _attributes;
