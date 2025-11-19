@@ -81,8 +81,8 @@ sealed class Program
                 {
                     foreach (var rule in config.LoggingRules)
                     {
-                        rule.EnableLoggingForLevel(LogLevel.Debug);
-                        rule.EnableLoggingForLevel(LogLevel.Trace);
+                        // Set minimum level to Debug (this is more reliable than EnableLoggingForLevel)
+                        rule.SetLoggingLevels(LogLevel.Debug, LogLevel.Fatal);
                     }
                     LogManager.Configuration = config; // Reapply configuration
                     LogManager.ReconfigExistingLoggers(); // Force reconfiguration of all loggers

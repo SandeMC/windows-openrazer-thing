@@ -199,9 +199,34 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         // When the checkbox is toggled by user, automatically apply the setting
         // Don't apply during initialization
+        // Run asynchronously to avoid UI lag when toggling
         if (_mouseSettingsService != null && !_isInitializing)
         {
-            SetMouseAccelerationCommand.Execute(null);
+            // Post to background thread to avoid blocking UI
+            Task.Run(() => 
+            {
+                try
+                {
+                    bool success = _mouseSettingsService.SetMouseAcceleration(value);
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        if (success)
+                        {
+                            StatusMessage = $"Windows mouse acceleration {(value ? "enabled" : "disabled")}";
+                            Logger.Info("Windows mouse acceleration set successfully");
+                        }
+                        else
+                        {
+                            StatusMessage = "Failed to set Windows mouse acceleration";
+                            Logger.Warn("Failed to set Windows mouse acceleration");
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error setting Windows mouse acceleration in background");
+                }
+            });
         }
     }
 
