@@ -7,6 +7,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform;
 using NLog;
 using RazerController.Views;
+using RazerController.ViewModels;
 
 namespace RazerController.Services;
 
@@ -18,15 +19,10 @@ public class TrayIconService
 
     public TrayIconService()
     {
-        Logger.Debug("Creating TrayIconService");
+        Logger.Info("Creating TrayIconService");
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             _desktop = desktop;
-            Logger.Debug("Desktop application lifetime obtained");
-        }
-        else
-        {
-            Logger.Warn("Desktop application lifetime not available");
         }
     }
 
@@ -49,29 +45,21 @@ public class TrayIconService
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 string iconPath = Path.Combine(appDir, "Assets", "avalonia-logo.ico");
                 
-                Logger.Debug($"Looking for tray icon at: {iconPath}");
-                
                 if (File.Exists(iconPath))
                 {
                     icon = new WindowIcon(iconPath);
-                    Logger.Debug("Tray icon loaded successfully");
-                }
-                else
-                {
-                    Logger.Warn($"Tray icon file not found at: {iconPath}, tray will have no icon");
                 }
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "Could not load tray icon, tray icon will be displayed without icon");
+                Logger.Warn(ex, "Could not load tray icon");
             }
 
             _trayIcon = new TrayIcon
             {
                 Icon = icon,
-                ToolTipText = "Razer Controller"
+                ToolTipText = "Windows OpenRazer Thing"
             };
-            Logger.Debug("TrayIcon object created");
 
             var menu = new NativeMenu();
 
@@ -87,13 +75,32 @@ public class TrayIconService
 
             _trayIcon.Menu = menu;
             _trayIcon.Clicked += (s, e) => ShowMainWindow();
+            
+            // When right-clicking to open menu, poll device values once
+            _trayIcon.Menu.Opening += (s, e) => PollDeviceValuesOnce();
 
             _trayIcon.IsVisible = true;
-            Logger.Info("Tray icon initialized and made visible");
+            Logger.Info("Tray icon initialized");
         }
         catch (Exception ex)
         {
             Logger.Error(ex, "Error initializing tray icon");
+        }
+    }
+
+    private void PollDeviceValuesOnce()
+    {
+        try
+        {
+            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm)
+            {
+                // Poll device values silently (no log noise)
+                vm.RefreshDeviceValues();
+            }
+        }
+        catch
+        {
+            // Silently fail - no log noise
         }
     }
 

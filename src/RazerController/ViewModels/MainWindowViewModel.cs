@@ -19,6 +19,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private Task? _pollingTask;
 
     [ObservableProperty]
+    private bool _isWindowActive = true;
+
+    [ObservableProperty]
     private ObservableCollection<DeviceModel> _devices = new();
 
     [ObservableProperty]
@@ -55,7 +58,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 {
                     PollRateOptions.Add(rate);
                 }
-                Logger.Debug($"Loaded supported poll rates: {string.Join(", ", supportedRates)}");
+                Logger.Info($"Loaded {supportedRates.Count} supported poll rates");
             }
         }
         
@@ -66,11 +69,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (currentDpi.HasValue)
             {
                 DpiValue = currentDpi.Value;
-                Logger.Debug($"Loaded current DPI: {currentDpi.Value}");
-            }
-            else
-            {
-                Logger.Warn("Failed to read current DPI from device");
+                Logger.Info($"Current DPI: {currentDpi.Value}");
             }
         }
         
@@ -90,11 +89,7 @@ public partial class MainWindowViewModel : ViewModelBase
                         break;
                     }
                 }
-                Logger.Debug($"Loaded current poll rate: {currentPollRate.Value}Hz");
-            }
-            else
-            {
-                Logger.Warn("Failed to read current poll rate from device");
+                Logger.Info($"Current poll rate: {currentPollRate.Value}Hz");
             }
         }
         
@@ -105,11 +100,6 @@ public partial class MainWindowViewModel : ViewModelBase
             if (currentBrightness.HasValue)
             {
                 Brightness = currentBrightness.Value;
-                Logger.Debug($"Loaded current brightness: {currentBrightness.Value}");
-            }
-            else
-            {
-                Logger.Warn("Failed to read current brightness from device");
             }
         }
         
@@ -119,7 +109,10 @@ public partial class MainWindowViewModel : ViewModelBase
             BatteryLevel = device.Device.GetBatteryLevel();
             BatteryStatus = device.Device.GetBatteryStatus();
             IsCharging = device.Device.GetIsCharging();
-            Logger.Debug($"Battery: {BatteryLevel}%, Status: {BatteryStatus}, Charging: {IsCharging}");
+            if (BatteryLevel.HasValue)
+            {
+                Logger.Info($"Battery: {BatteryLevel}%{(IsCharging ? " (Charging)" : "")}");
+            }
         }
         else
         {
@@ -175,6 +168,14 @@ public partial class MainWindowViewModel : ViewModelBase
         Logger.Info("Initializing MainWindowViewModel");
         _deviceManager = new RazerDeviceManager();
         Logger.Info("RazerDeviceManager created");
+        
+        // Auto-initialize devices on startup
+        Task.Run(() => 
+        {
+            // Small delay to ensure UI is ready
+            Task.Delay(500).Wait();
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => Initialize());
+        });
     }
 
     [RelayCommand]
@@ -477,9 +478,10 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 while (!_pollingCancellation.Token.IsCancellationRequested)
                 {
-                    await Task.Delay(3000, _pollingCancellation.Token); // Poll every 3 seconds
+                    await Task.Delay(1000, _pollingCancellation.Token); // Poll every 1 second
                     
-                    if (SelectedDevice?.Device != null)
+                    // Only poll if window is active/in foreground
+                    if (IsWindowActive && SelectedDevice?.Device != null)
                     {
                         // Update device values on UI thread
                         Avalonia.Threading.Dispatcher.UIThread.Post(() =>
@@ -529,7 +531,6 @@ public partial class MainWindowViewModel : ViewModelBase
                 if (currentDpi.HasValue && currentDpi.Value != DpiValue)
                 {
                     DpiValue = currentDpi.Value;
-                    Logger.Debug($"DPI changed to: {currentDpi.Value}");
                 }
             }
 
@@ -549,7 +550,6 @@ public partial class MainWindowViewModel : ViewModelBase
                             break;
                         }
                     }
-                    Logger.Debug($"Poll rate changed to: {currentPollRate.Value}Hz");
                 }
             }
 
@@ -560,7 +560,6 @@ public partial class MainWindowViewModel : ViewModelBase
                 if (currentBrightness.HasValue && currentBrightness.Value != Brightness)
                 {
                     Brightness = currentBrightness.Value;
-                    Logger.Debug($"Brightness changed to: {currentBrightness.Value}");
                 }
             }
 
@@ -576,7 +575,6 @@ public partial class MainWindowViewModel : ViewModelBase
                     BatteryLevel = batteryLevel;
                     BatteryStatus = batteryStatus;
                     IsCharging = isCharging;
-                    Logger.Debug($"Battery updated: {BatteryLevel}%, {BatteryStatus}, Charging: {IsCharging}");
                 }
             }
         }
