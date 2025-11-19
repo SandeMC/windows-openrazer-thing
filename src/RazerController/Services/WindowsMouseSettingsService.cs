@@ -66,13 +66,12 @@ public class WindowsMouseSettingsService
             
             unsafe
             {
-                // For SPI_SETMOUSESPEED, the value must be passed as a pointer in pvParam
-                int value = sensitivity;
+                // For SPI_SETMOUSESPEED, pass the sensitivity value as a pointer in pvParam
                 bool success = User32.SystemParametersInfo(
                     User32.SystemParametersInfoAction.SPI_SETMOUSESPEED,
                     0,
-                    &value,
-                    User32.SystemParametersInfoFlags.SPIF_UPDATEINIFILE | User32.SystemParametersInfoFlags.SPIF_SENDCHANGE);
+                    &sensitivity,
+                    User32.SystemParametersInfoFlags.None);
                 
                 int lastError = Marshal.GetLastWin32Error();
                 

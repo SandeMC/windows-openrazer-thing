@@ -331,6 +331,13 @@ public partial class MainWindowViewModel : ViewModelBase
             Devices.Add(new DeviceModel(device));
         }
         StatusMessage = $"Refreshed. Found {Devices.Count} device(s)";
+        
+        // Auto-select first device
+        if (Devices.Count > 0)
+        {
+            SelectedDevice = Devices[0];
+            Logger.Info($"Auto-selected first device: {Devices[0].Name}");
+        }
     }
     
     [RelayCommand]

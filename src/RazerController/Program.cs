@@ -71,30 +71,21 @@ sealed class Program
                 Directory.CreateDirectory(logDirectory);
             }
             
-            // Check if DEBUG file exists to enable debug logging
-            var debugFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DEBUG");
-            if (File.Exists(debugFilePath))
+            // Enable DEBUG level logging by default
+            var logConfig = LogManager.Configuration;
+            if (logConfig != null)
             {
-                // Enable DEBUG level logging
-                var config = LogManager.Configuration;
-                if (config != null)
+                foreach (var rule in logConfig.LoggingRules)
                 {
-                    foreach (var rule in config.LoggingRules)
-                    {
-                        // Set minimum level to Debug (this is more reliable than EnableLoggingForLevel)
-                        rule.SetLoggingLevels(LogLevel.Debug, LogLevel.Fatal);
-                    }
-                    LogManager.Configuration = config; // Reapply configuration
-                    LogManager.ReconfigExistingLoggers(); // Force reconfiguration of all loggers
+                    // Set minimum level to Debug
+                    rule.SetLoggingLevels(LogLevel.Debug, LogLevel.Fatal);
                 }
+                LogManager.Configuration = logConfig; // Reapply configuration
+                LogManager.ReconfigExistingLoggers(); // Force reconfiguration of all loggers
             }
             
             Logger.Info("===== WindowsOpenrazerThing Starting =====");
-            if (File.Exists(debugFilePath))
-            {
-                Logger.Info("DEBUG file detected - Debug logging enabled");
-                Logger.Debug("This is a debug log message to verify debug logging is working");
-            }
+            Logger.Debug("Debug logging enabled by default");
             Logger.Info($"Application Base Directory: {AppDomain.CurrentDomain.BaseDirectory}");
             Logger.Info($"Working Directory: {Environment.CurrentDirectory}");
             Logger.Info($"OS: {Environment.OSVersion}");
