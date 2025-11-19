@@ -3,7 +3,7 @@
 > [!CAUTION]
 > **THIS APPLICATION IS AN AI-MADE PROOF OF CONCEPT**
 > 
-> This is a proof-of-concept application that has been **entirely vibecoded** (excluding existing libraries - such as [openrazer-win32](https://github.com/tpoechtrager/openrazer-win32) - which are a base for this application. It may not work correctly, and **will likely not be maintained**. Use at your own risk.
+> This is a proof-of-concept application that has been **entirely vibecoded** (excluding existing libraries - such as [openrazer-win32](https://github.com/tpoechtrager/openrazer-win32) - which are a base for this application. It may not work correctly, and **will likely not be maintained**. It does support some features, but use at your own risk.
 >
 > **Key Limitations:**
 > - Device driver code and database cutoff: **May 23, 2025**
@@ -49,8 +49,8 @@ A Windows application for controlling Razer devices without Synapse, using the o
 - System tray icon for quick access to the app
 
 ## Screenshots
-
-Screenshots will be added after the application is built and running.
+<img width="1920" height="1027" alt="image" src="https://github.com/user-attachments/assets/936643fe-0daf-4e1b-9a07-d3237129d5e8" />
+<img width="1920" height="1027" alt="image" src="https://github.com/user-attachments/assets/c5bb3ae2-8c67-47ef-9721-b17d6cab594a" />
 
 ## Requirements
 
@@ -112,7 +112,7 @@ dotnet publish src/RazerController/RazerController.csproj -c Release -r win-x64 
 
 ## Quick Start
 
-1. Launch the Application: Run `WindowsOpenrazerThing.exe
+1. Launch the Application: Run `WindowsOpenrazerThing.exe`
 2. Devices Auto-Initialize: The app automatically detects your Razer devices on startup
 3. Select a Device: Click on a device in the left panel (first device is auto-selected)
 4. Control Your Device:
@@ -173,6 +173,7 @@ This project uses the OpenRazer Win32 driver, which is based on the OpenRazer Li
 - **OpenRazer Win32**: [tpoechtrager](https://github.com/tpoechtrager/openrazer-win32) (based on CalcProgrammer1's original work)
 - **OpenRazer**: The [OpenRazer Team](https://github.com/openrazer/openrazer)
 - **UI Framework**: [Avalonia Team](https://github.com/AvaloniaUI/Avalonia)
+- **Polychromatic**: [Polychromatic Team](https://github.com/polychromatic/polychromatic) (some of their implementations have been used for reference)
 
 ## Acknowledgments
 
