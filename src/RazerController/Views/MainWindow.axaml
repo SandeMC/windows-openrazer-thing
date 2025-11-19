@@ -6,8 +6,8 @@
         mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
         x:Class="RazerController.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="Windows OpenRazer Thing"
+        Icon="/Assets/logo.ico"
+        Title="WindowsOpenrazerThing"
         Width="900" Height="650"
         MinWidth="700" MinHeight="500">
 
@@ -46,6 +46,10 @@
             <!-- Device Controls -->
             <ScrollViewer Grid.Column="1">
                 <StackPanel IsEnabled="{Binding SelectedDevice, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="15">
+                    
+                    <!-- Refresh Button for Selected Device -->
+                    <Button Content="Refresh Device Values" Command="{Binding RefreshDeviceValuesCommand}" 
+                            HorizontalAlignment="Center" Padding="20,5"/>
                     
                     <!-- Device Info -->
                     <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
@@ -94,7 +98,7 @@
                                 <Slider Minimum="100" Maximum="20000" 
                                         Value="{Binding DpiValue}" 
                                         TickFrequency="100" 
-                                        IsSnapToTickEnabled="False"
+                                        IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <NumericUpDown Grid.Column="0" Minimum="100" Maximum="20000" Increment="100"
@@ -124,6 +128,33 @@
                                     </ComboBox>
                                     <Button Grid.Column="1" Content="Set Poll Rate" Command="{Binding SetPollRateCommand}" Margin="10,0,0,0"/>
                                 </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Windows Mouse Settings -->
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Windows Mouse Settings" FontSize="16" FontWeight="Bold"/>
+                            
+                            <!-- Sensitivity Control -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Pointer Speed (Sensitivity):" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider Grid.Column="0" Minimum="1" Maximum="20" 
+                                            Value="{Binding WindowsSensitivity}" 
+                                            TickFrequency="1" 
+                                            IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding WindowsSensitivity}" Width="40" Margin="10,0"/>
+                                </Grid>
+                                <Button Content="Apply Sensitivity" Command="{Binding SetWindowsSensitivityCommand}"/>
+                            </StackPanel>
+                            
+                            <!-- Mouse Acceleration Toggle -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Mouse Acceleration:" FontWeight="Bold"/>
+                                <CheckBox IsChecked="{Binding WindowsMouseAcceleration}" 
+                                          Content="Enable pointer precision (mouse acceleration)"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>

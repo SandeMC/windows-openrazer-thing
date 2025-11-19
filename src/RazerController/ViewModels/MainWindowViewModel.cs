@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using NLog;
 using RazerController.Models;
 using RazerController.Native;
+using RazerController.Services;
 
 namespace RazerController.ViewModels;
 
@@ -16,6 +17,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly RazerDeviceManager _deviceManager;
+    private readonly WindowsMouseSettingsService _mouseSettingsService;
     private CancellationTokenSource? _pollingCancellation;
     private Task? _pollingTask;
 
@@ -33,7 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedDeviceChanged(DeviceModel? value)
     {
-        // Stop any existing polling
+        // Stop any existing polling (polling disabled per requirements)
         StopDevicePolling();
         
         if (value?.Device != null)
@@ -41,8 +43,7 @@ public partial class MainWindowViewModel : ViewModelBase
             // Load all device values initially
             LoadDeviceValues(value);
             
-            // Start polling for updates
-            StartDevicePolling();
+            // No longer start automatic polling - user must use refresh button
         }
     }
 
@@ -185,6 +186,24 @@ public partial class MainWindowViewModel : ViewModelBase
     
     [ObservableProperty]
     private bool _isCharging;
+    
+    private bool _isInitializing = true;
+
+    [ObservableProperty]
+    private int _windowsSensitivity = 10; // Default Windows sensitivity (1-20)
+    
+    [ObservableProperty]
+    private bool _windowsMouseAcceleration = true;
+    
+    partial void OnWindowsMouseAccelerationChanged(bool value)
+    {
+        // When the checkbox is toggled by user, automatically apply the setting
+        // Don't apply during initialization
+        if (_mouseSettingsService != null && !_isInitializing)
+        {
+            SetMouseAccelerationCommand.Execute(null);
+        }
+    }
 
     public Color PreviewColor => Color.FromRgb(RedValue, GreenValue, BlueValue);
 
@@ -192,7 +211,11 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Logger.Info("Initializing MainWindowViewModel");
         _deviceManager = new RazerDeviceManager();
-        Logger.Info("RazerDeviceManager created");
+        _mouseSettingsService = new WindowsMouseSettingsService();
+        Logger.Info("RazerDeviceManager and MouseSettingsService created");
+        
+        // Load current Windows mouse settings
+        LoadWindowsMouseSettings();
         
         // Auto-initialize devices on startup
         Task.Run(() => 
@@ -201,6 +224,34 @@ public partial class MainWindowViewModel : ViewModelBase
             Task.Delay(500).Wait();
             Avalonia.Threading.Dispatcher.UIThread.Post(() => Initialize());
         });
+    }
+    
+    private void LoadWindowsMouseSettings()
+    {
+        // Temporarily disable auto-apply during reload to prevent loops
+        _isInitializing = true;
+        
+        try
+        {
+            var sensitivity = _mouseSettingsService.GetMouseSensitivity();
+            if (sensitivity.HasValue)
+            {
+                WindowsSensitivity = sensitivity.Value;
+                Logger.Info($"Loaded Windows mouse sensitivity: {sensitivity.Value}");
+            }
+            
+            var acceleration = _mouseSettingsService.GetMouseAcceleration();
+            if (acceleration.HasValue)
+            {
+                WindowsMouseAcceleration = acceleration.Value;
+                Logger.Info($"Loaded Windows mouse acceleration: {acceleration.Value}");
+            }
+        }
+        finally
+        {
+            // Re-enable auto-apply after loading
+            _isInitializing = false;
+        }
     }
 
     [RelayCommand]
@@ -226,8 +277,10 @@ public partial class MainWindowViewModel : ViewModelBase
                 
                 if (Devices.Count > 0)
                 {
-                    SelectedDevice = Devices[0];
-                    Logger.Info($"Selected first device: {SelectedDevice.Name}");
+                    // Prefer selecting a mouse first, otherwise select the first device
+                    var firstMouse = Devices.FirstOrDefault(d => d.Device.DeviceType == RazerDeviceType.Mouse);
+                    SelectedDevice = firstMouse ?? Devices[0];
+                    Logger.Info($"Selected device: {SelectedDevice.Name} (Type: {SelectedDevice.DeviceType})");
                 }
             }
             else
@@ -253,6 +306,17 @@ public partial class MainWindowViewModel : ViewModelBase
             Devices.Add(new DeviceModel(device));
         }
         StatusMessage = $"Refreshed. Found {Devices.Count} device(s)";
+    }
+    
+    [RelayCommand]
+    private void RefreshDeviceValues()
+    {
+        if (SelectedDevice?.Device != null)
+        {
+            Logger.Info("Refreshing device values for selected device");
+            LoadDeviceValues(SelectedDevice);
+            StatusMessage = "Device values refreshed";
+        }
     }
 
     [RelayCommand]
@@ -514,6 +578,62 @@ public partial class MainWindowViewModel : ViewModelBase
             StatusMessage = $"Error setting poll rate: {ex.Message}";
         }
     }
+    
+    [RelayCommand]
+    private void SetWindowsSensitivity()
+    {
+        try
+        {
+            Logger.Info($"Setting Windows mouse sensitivity to {WindowsSensitivity}");
+            bool success = _mouseSettingsService.SetMouseSensitivity(WindowsSensitivity);
+            
+            if (success)
+            {
+                StatusMessage = $"Windows mouse sensitivity set to {WindowsSensitivity}";
+                Logger.Info("Windows mouse sensitivity set successfully");
+            }
+            else
+            {
+                StatusMessage = "Failed to set Windows mouse sensitivity";
+                Logger.Warn("Failed to set Windows mouse sensitivity");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error setting Windows mouse sensitivity");
+            StatusMessage = $"Error setting sensitivity: {ex.Message}";
+        }
+    }
+    
+    [RelayCommand]
+    private void SetMouseAcceleration()
+    {
+        try
+        {
+            Logger.Info($"Setting Windows mouse acceleration to {WindowsMouseAcceleration}");
+            bool success = _mouseSettingsService.SetMouseAcceleration(WindowsMouseAcceleration);
+            
+            if (success)
+            {
+                StatusMessage = $"Windows mouse acceleration {(WindowsMouseAcceleration ? "enabled" : "disabled")}";
+                Logger.Info("Windows mouse acceleration set successfully");
+            }
+            else
+            {
+                StatusMessage = "Failed to set Windows mouse acceleration";
+                Logger.Warn("Failed to set Windows mouse acceleration");
+                // Reload the actual current value
+                LoadWindowsMouseSettings();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error setting Windows mouse acceleration");
+            StatusMessage = $"Error setting acceleration: {ex.Message}";
+            // Reload the actual current value
+            LoadWindowsMouseSettings();
+        }
+    }
 
     private void StartDevicePolling()
     {
@@ -534,7 +654,7 @@ public partial class MainWindowViewModel : ViewModelBase
                         {
                             try
                             {
-                                RefreshDeviceValues();
+                                RefreshDeviceValuesInternal();
                             }
                             catch (Exception ex)
                             {
@@ -564,7 +684,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _pollingTask = null;
     }
 
-    public void RefreshDeviceValues()
+    private void RefreshDeviceValuesInternal()
     {
         if (SelectedDevice?.Device == null) return;
 

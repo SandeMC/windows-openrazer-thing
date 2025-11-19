@@ -366,20 +366,25 @@ public class RazerDevice
         // Set stages at 400, 800, 1600, 3200, 6400
         int[] stages = { 400, 800, 1600, 3200, 6400 };
         
-        // Find which stage the current DPI is closest to and include it
-        List<int> stagesList = stages.ToList();
-        if (!stagesList.Contains(dpi))
+        // Find the active stage index based on current DPI
+        int activeStageIndex = 0;
+        int closestDiff = int.MaxValue;
+        for (int i = 0; i < stages.Length; i++)
         {
-            // Add current DPI to stages and sort
-            stagesList.Add(dpi);
-            stagesList.Sort();
+            int diff = Math.Abs(stages[i] - dpi);
+            if (diff < closestDiff)
+            {
+                closestDiff = diff;
+                activeStageIndex = i;
+            }
         }
         
-        // Format as bytes: count byte + pairs of DPI values (high, low)
+        // Format as bytes: count byte + active stage byte + pairs of DPI values (high, low)
         List<byte> stageBytes = new List<byte>();
-        stageBytes.Add((byte)stagesList.Count); // Number of stages
+        stageBytes.Add((byte)stages.Length); // Number of stages
+        stageBytes.Add((byte)(activeStageIndex + 1)); // Active stage (1-based index)
         
-        foreach (int stageDpi in stagesList)
+        foreach (int stageDpi in stages)
         {
             byte highByte = (byte)((stageDpi >> 8) & 0xFF);
             byte lowByte = (byte)(stageDpi & 0xFF);
@@ -387,6 +392,7 @@ public class RazerDevice
             stageBytes.Add(lowByte);
         }
         
+        Logger.Debug($"Setting DPI stages with active stage {activeStageIndex + 1} (closest to {dpi})");
         return WriteAttribute("dpi_stages", stageBytes.ToArray());
     }
 
