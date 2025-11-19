@@ -305,9 +305,11 @@ public class RazerDevice
         if (DeviceType != RazerDeviceType.Mouse)
             return false;
 
-        // DPI is sent as two bytes (X and Y DPI, usually the same)
-        byte dpiByte = (byte)(dpi / 100);
-        return WriteAttribute("dpi", new[] { dpiByte, dpiByte });
+        // DPI is sent as 4 bytes: 2 unsigned shorts in big-endian format (X DPI, Y DPI)
+        // For example, 800 DPI = 0x0320 = bytes [0x03, 0x20, 0x03, 0x20]
+        byte dpiHighByte = (byte)((dpi >> 8) & 0xFF);
+        byte dpiLowByte = (byte)(dpi & 0xFF);
+        return WriteAttribute("dpi", new[] { dpiHighByte, dpiLowByte, dpiHighByte, dpiLowByte });
     }
 
     public int? GetDPI()
@@ -329,14 +331,21 @@ public class RazerDevice
             
             Logger.Debug($"GetDPI returned {length} bytes: {BitConverter.ToString(buffer, 0, Math.Min(length, 20))}");
             
-            if (length >= 2)
+            if (length > 0)
             {
-                // DPI is typically returned as two bytes (X and Y DPI)
-                // Each byte represents DPI/100
-                int dpiX = buffer[0] * 100;
-                int dpiY = buffer[1] * 100;
-                Logger.Debug($"Parsed DPI: X={dpiX}, Y={dpiY}");
-                return dpiX; // Return X DPI (usually they're the same)
+                // DPI is returned as a string in format "X:Y\n" (e.g., "800:800\n")
+                string dpiStr = Encoding.ASCII.GetString(buffer, 0, length).TrimEnd('\0', '\n', '\r');
+                Logger.Debug($"DPI string: '{dpiStr}'");
+                
+                // Parse the "X:Y" format
+                string[] parts = dpiStr.Split(':');
+                if (parts.Length >= 1 && int.TryParse(parts[0], out int dpiX))
+                {
+                    Logger.Debug($"Parsed DPI: X={dpiX}");
+                    return dpiX; // Return X DPI (usually they're the same as Y)
+                }
+                
+                Logger.Warn($"Failed to parse DPI string: '{dpiStr}'");
             }
         }
         catch (Exception ex)
