@@ -281,9 +281,37 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Logger.Info($"Setting DPI to {DpiValue}");
             bool success = SelectedDevice.Device.SetDPI(DpiValue);
-            StatusMessage = success ? $"Set DPI to {DpiValue}" : "Failed to set DPI";
-            if (success) Logger.Info($"DPI set to {DpiValue} successfully");
-            else Logger.Warn($"Failed to set DPI to {DpiValue}");
+            
+            if (success)
+            {
+                Logger.Info($"DPI write command succeeded for {DpiValue}");
+                
+                // Verify by reading back the DPI
+                var actualDpi = SelectedDevice.Device.GetDPI();
+                if (actualDpi.HasValue)
+                {
+                    Logger.Info($"Verified DPI: {actualDpi.Value}");
+                    if (actualDpi.Value == DpiValue)
+                    {
+                        StatusMessage = $"DPI set to {DpiValue}";
+                    }
+                    else
+                    {
+                        StatusMessage = $"DPI set, but device reports {actualDpi.Value} (requested {DpiValue})";
+                        Logger.Warn($"DPI mismatch: requested {DpiValue}, device reports {actualDpi.Value}");
+                    }
+                }
+                else
+                {
+                    StatusMessage = $"DPI command sent, but could not verify";
+                    Logger.Warn("Failed to read back DPI after setting");
+                }
+            }
+            else
+            {
+                StatusMessage = "Failed to set DPI";
+                Logger.Warn($"Failed to set DPI to {DpiValue}");
+            }
         }
         catch (Exception ex)
         {
