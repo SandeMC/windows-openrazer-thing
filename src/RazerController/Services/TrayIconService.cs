@@ -63,9 +63,13 @@ public class TrayIconService
 
             var menu = new NativeMenu();
 
-            var showItem = new NativeMenuItem("Show");
+            var showItem = new NativeMenuItem("Show Window");
             showItem.Click += (s, e) => ShowMainWindow();
             menu.Items.Add(showItem);
+            
+            var refreshItem = new NativeMenuItem("Refresh Devices");
+            refreshItem.Click += (s, e) => RefreshDevices();
+            menu.Items.Add(refreshItem);
 
             menu.Items.Add(new NativeMenuItemSeparator());
 
@@ -76,8 +80,12 @@ public class TrayIconService
             _trayIcon.Menu = menu;
             _trayIcon.Clicked += (s, e) => ShowMainWindow();
             
-            // When right-clicking to open menu, poll device values once
-            _trayIcon.Menu.Opening += (s, e) => PollDeviceValuesOnce();
+            // When right-clicking to open menu, poll device values once and update tooltip
+            _trayIcon.Menu.Opening += (s, e) => 
+            {
+                PollDeviceValuesOnce();
+                UpdateTooltip();
+            };
 
             _trayIcon.IsVisible = true;
             Logger.Info("Tray icon initialized");
@@ -101,6 +109,59 @@ public class TrayIconService
         catch
         {
             // Silently fail - no log noise
+        }
+    }
+
+    private void RefreshDevices()
+    {
+        try
+        {
+            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => vm.RefreshCommand.Execute(null));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warn(ex, "Error refreshing devices from tray");
+        }
+    }
+
+    private void UpdateTooltip()
+    {
+        try
+        {
+            if (_trayIcon == null) return;
+            
+            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm && vm.SelectedDevice != null)
+            {
+                string deviceInfo = $"Windows OpenRazer Thing\n{vm.SelectedDevice.Name}";
+                
+                if (vm.SelectedDevice.SupportsDPI && vm.DpiValue > 0)
+                {
+                    deviceInfo += $"\nDPI: {vm.DpiValue}";
+                }
+                
+                if (vm.SelectedDevice.SupportsPollRate && vm.PollRate > 0)
+                {
+                    deviceInfo += $"\nPoll Rate: {vm.PollRate}Hz";
+                }
+                
+                if (vm.SelectedDevice.SupportsBattery && vm.BatteryLevel.HasValue)
+                {
+                    deviceInfo += $"\nBattery: {vm.BatteryLevel}%{(vm.IsCharging ? " (Charging)" : "")}";
+                }
+                
+                _trayIcon.ToolTipText = deviceInfo;
+            }
+            else
+            {
+                _trayIcon.ToolTipText = "Windows OpenRazer Thing";
+            }
+        }
+        catch
+        {
+            // Silently fail
         }
     }
 
