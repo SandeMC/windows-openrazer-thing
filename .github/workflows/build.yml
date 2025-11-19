@@ -1,0 +1,119 @@
+name: Build Razer Controller
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    permissions:
+      contents: read
+    
+    strategy:
+      matrix:
+        configuration: [Release]
+        platform: [x64]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Restore .NET dependencies
+      run: dotnet restore RazerController.sln
+    
+    - name: Build native DLL
+      run: |
+        msbuild native/OpenRazer.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m /v:minimal
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Native DLL build failed"
+          exit 1
+        }
+      shell: pwsh
+    
+    - name: Verify native DLL exists
+      run: |
+        $dllPath = "native\OpenRazer64.dll"
+        if (-not (Test-Path $dllPath)) {
+          Write-Error "Native DLL not found at: $dllPath"
+          Write-Host "Searching for DLL files in native directory:"
+          Get-ChildItem native -Recurse -Filter "*.dll" | Format-Table FullName
+          exit 1
+        }
+        Write-Host "Native DLL found at: $dllPath"
+      shell: pwsh
+    
+    - name: Build .NET application
+      run: dotnet build RazerController.sln -c ${{ matrix.configuration }} --no-restore
+    
+    - name: Copy native DLL to output
+      run: |
+        $outputDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0"
+        
+        # Copy OpenRazer DLL
+        $dllName = "OpenRazer64.dll"
+        $dllSource = "native\$dllName"
+        $dllDest = "$outputDir\$dllName"
+        Copy-Item $dllSource $dllDest -Force
+        Write-Host "Copied OpenRazer DLL from $dllSource to $dllDest"
+      shell: pwsh
+    
+    - name: Publish application
+      run: |
+        dotnet publish src/RazerController/RazerController.csproj `
+          -c ${{ matrix.configuration }} `
+          -r win-${{ matrix.platform }} `
+          --self-contained `
+          -p:PublishSingleFile=false `
+          -p:IncludeNativeLibrariesForSelfExtract=true
+      shell: pwsh
+    
+    - name: Copy native DLLs to publish folder
+      run: |
+        $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\win-x64\publish"
+        
+        # Copy OpenRazer DLL
+        $dllName = "OpenRazer64.dll"
+        $dllSource = "native\$dllName"
+        Copy-Item $dllSource "$publishDir\$dllName" -Force
+        Write-Host "Copied OpenRazer DLL to publish folder: $publishDir\$dllName"
+      shell: pwsh
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: RazerController-${{ matrix.platform }}-${{ matrix.configuration }}
+        path: src/RazerController/bin/${{ matrix.configuration }}/net9.0/win-x64/publish/
+    
+    - name: Create release archive
+      if: github.event_name == 'release'
+      run: |
+        $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\win-x64\publish"
+        Compress-Archive -Path "$publishDir\*" -DestinationPath "RazerController-win-${{ matrix.platform }}.zip"
+      shell: pwsh
+    
+    - name: Upload release asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./RazerController-win-${{ matrix.platform }}.zip
+        asset_name: RazerController-win-${{ matrix.platform }}.zip
+        asset_content_type: application/zip
