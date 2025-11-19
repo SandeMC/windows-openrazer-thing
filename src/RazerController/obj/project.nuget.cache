@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "OmZp/vyk3o0=",
+  "dgSpecHash": "N7PxEd87V3s=",
   "success": true,
   "projectFilePath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/RazerController.csproj",
   "expectedPackageFiles": [
@@ -35,7 +35,8 @@
     "/home/runner/.nuget/packages/skiasharp.nativeassets.win32/2.88.9/skiasharp.nativeassets.win32.2.88.9.nupkg.sha512",
     "/home/runner/.nuget/packages/system.drawing.common/10.0.0/system.drawing.common.10.0.0.nupkg.sha512",
     "/home/runner/.nuget/packages/system.io.pipelines/8.0.0/system.io.pipelines.8.0.0.nupkg.sha512",
-    "/home/runner/.nuget/packages/tmds.dbus.protocol/0.21.2/tmds.dbus.protocol.0.21.2.nupkg.sha512"
+    "/home/runner/.nuget/packages/tmds.dbus.protocol/0.21.2/tmds.dbus.protocol.0.21.2.nupkg.sha512",
+    "/home/runner/.nuget/packages/microsoft.windowsdesktop.app.ref/9.0.11/microsoft.windowsdesktop.app.ref.9.0.11.nupkg.sha512"
   ],
   "logs": []
 }

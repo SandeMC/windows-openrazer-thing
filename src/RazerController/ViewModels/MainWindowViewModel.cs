@@ -192,6 +192,15 @@ public partial class MainWindowViewModel : ViewModelBase
     
     [ObservableProperty]
     private bool _windowsMouseAcceleration = true;
+    
+    partial void OnWindowsMouseAccelerationChanged(bool value)
+    {
+        // When the checkbox is toggled by user, automatically apply the setting
+        if (_mouseSettingsService != null)
+        {
+            SetMouseAccelerationCommand.Execute(null);
+        }
+    }
 
     public Color PreviewColor => Color.FromRgb(RedValue, GreenValue, BlueValue);
 
@@ -284,12 +293,12 @@ public partial class MainWindowViewModel : ViewModelBase
     }
     
     [RelayCommand]
-    private void RefreshDeviceValuesCommand()
+    private void RefreshDeviceValues()
     {
         if (SelectedDevice?.Device != null)
         {
             Logger.Info("Refreshing device values for selected device");
-            RefreshDeviceValues();
+            LoadDeviceValues(SelectedDevice);
             StatusMessage = "Device values refreshed";
         }
     }
@@ -581,35 +590,32 @@ public partial class MainWindowViewModel : ViewModelBase
     }
     
     [RelayCommand]
-    private void ToggleMouseAcceleration()
+    private void SetMouseAcceleration()
     {
         try
         {
-            // Toggle the value
-            WindowsMouseAcceleration = !WindowsMouseAcceleration;
-            
             Logger.Info($"Setting Windows mouse acceleration to {WindowsMouseAcceleration}");
             bool success = _mouseSettingsService.SetMouseAcceleration(WindowsMouseAcceleration);
             
             if (success)
             {
                 StatusMessage = $"Windows mouse acceleration {(WindowsMouseAcceleration ? "enabled" : "disabled")}";
-                Logger.Info("Windows mouse acceleration toggled successfully");
+                Logger.Info("Windows mouse acceleration set successfully");
             }
             else
             {
-                // Revert the toggle if it failed
-                WindowsMouseAcceleration = !WindowsMouseAcceleration;
-                StatusMessage = "Failed to toggle Windows mouse acceleration";
-                Logger.Warn("Failed to toggle Windows mouse acceleration");
+                StatusMessage = "Failed to set Windows mouse acceleration";
+                Logger.Warn("Failed to set Windows mouse acceleration");
+                // Reload the actual current value
+                LoadWindowsMouseSettings();
             }
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error toggling Windows mouse acceleration");
-            StatusMessage = $"Error toggling acceleration: {ex.Message}";
-            // Revert the toggle if it failed
-            WindowsMouseAcceleration = !WindowsMouseAcceleration;
+            Logger.Error(ex, "Error setting Windows mouse acceleration");
+            StatusMessage = $"Error setting acceleration: {ex.Message}";
+            // Reload the actual current value
+            LoadWindowsMouseSettings();
         }
     }
 
@@ -632,7 +638,7 @@ public partial class MainWindowViewModel : ViewModelBase
                         {
                             try
                             {
-                                RefreshDeviceValues();
+                                RefreshDeviceValuesInternal();
                             }
                             catch (Exception ex)
                             {
@@ -662,7 +668,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _pollingTask = null;
     }
 
-    public void RefreshDeviceValues()
+    private void RefreshDeviceValuesInternal()
     {
         if (SelectedDevice?.Device == null) return;
 

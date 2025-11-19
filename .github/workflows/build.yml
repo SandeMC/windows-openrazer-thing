@@ -77,7 +77,7 @@ jobs:
     
     - name: Copy native DLL to output
       run: |
-        $outputDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0"
+        $outputDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0-windows"
         
         # Copy OpenRazer DLL
         $dllName = "OpenRazer64.dll"
@@ -99,7 +99,7 @@ jobs:
     
     - name: Copy native DLLs to publish folder
       run: |
-        $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\win-x64\publish"
+        $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0-windows\win-x64\publish"
         
         # Copy OpenRazer DLL
         $dllName = "OpenRazer64.dll"
@@ -108,16 +108,73 @@ jobs:
         Write-Host "Copied OpenRazer DLL to publish folder: $publishDir\$dllName"
       shell: pwsh
     
-    - name: Upload artifact
+    - name: Upload artifact (folder structure)
       uses: actions/upload-artifact@v4
       with:
-        name: WindowsOpenrazerThing-${{ matrix.platform }}-${{ matrix.configuration }}
-        path: src/RazerController/bin/${{ matrix.configuration }}/net9.0/win-x64/publish/
+        name: WindowsOpenrazerThing-${{ matrix.platform }}-${{ matrix.configuration }}-folder
+        path: src/RazerController/bin/${{ matrix.configuration }}/net9.0-windows/win-x64/publish/
+    
+    - name: Publish single-exe (self-contained with .NET)
+      run: |
+        dotnet publish src/RazerController/RazerController.csproj `
+          -c ${{ matrix.configuration }} `
+          -r win-${{ matrix.platform }} `
+          --self-contained `
+          -p:PublishSingleFile=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -p:DebugType=embedded `
+          -o publish-single-self-contained
+      shell: pwsh
+    
+    - name: Copy native DLLs to single-exe self-contained folder
+      run: |
+        $publishDir = "publish-single-self-contained"
+        
+        # Copy OpenRazer DLL
+        $dllName = "OpenRazer64.dll"
+        $dllSource = "native\$dllName"
+        Copy-Item $dllSource "$publishDir\$dllName" -Force
+        Write-Host "Copied OpenRazer DLL to single-exe folder: $publishDir\$dllName"
+      shell: pwsh
+    
+    - name: Upload single-exe artifact (self-contained with .NET)
+      uses: actions/upload-artifact@v4
+      with:
+        name: WindowsOpenrazerThing-${{ matrix.platform }}-${{ matrix.configuration }}-single-exe-with-dotnet
+        path: publish-single-self-contained/
+    
+    - name: Publish single-exe (framework-dependent without .NET)
+      run: |
+        dotnet publish src/RazerController/RazerController.csproj `
+          -c ${{ matrix.configuration }} `
+          -r win-${{ matrix.platform }} `
+          --self-contained false `
+          -p:PublishSingleFile=true `
+          -p:DebugType=embedded `
+          -o publish-single-framework-dependent
+      shell: pwsh
+    
+    - name: Copy native DLLs to single-exe framework-dependent folder
+      run: |
+        $publishDir = "publish-single-framework-dependent"
+        
+        # Copy OpenRazer DLL
+        $dllName = "OpenRazer64.dll"
+        $dllSource = "native\$dllName"
+        Copy-Item $dllSource "$publishDir\$dllName" -Force
+        Write-Host "Copied OpenRazer DLL to single-exe folder: $publishDir\$dllName"
+      shell: pwsh
+    
+    - name: Upload single-exe artifact (framework-dependent without .NET)
+      uses: actions/upload-artifact@v4
+      with:
+        name: WindowsOpenrazerThing-${{ matrix.platform }}-${{ matrix.configuration }}-single-exe-no-dotnet
+        path: publish-single-framework-dependent/
     
     - name: Create release archive
       if: github.event_name == 'release'
       run: |
-        $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\win-x64\publish"
+        $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0-windows\win-x64\publish"
         Compress-Archive -Path "$publishDir\*" -DestinationPath "WindowsOpenrazerThing-win-${{ matrix.platform }}.zip"
       shell: pwsh
     

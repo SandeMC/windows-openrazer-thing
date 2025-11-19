@@ -1,7 +1,7 @@
 {
   "version": 3,
   "targets": {
-    "net9.0": {
+    "net9.0-windows7.0": {
       "Avalonia/11.3.8": {
         "type": "package",
         "dependencies": {
@@ -1651,7 +1651,7 @@
     }
   },
   "projectFileDependencyGroups": {
-    "net9.0": [
+    "net9.0-windows7.0": [
       "Avalonia >= 11.3.8",
       "Avalonia.Desktop >= 11.3.8",
       "Avalonia.Diagnostics >= 11.3.8",
@@ -1679,14 +1679,14 @@
         "/home/runner/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
-        "net9.0"
+        "net9.0-windows"
       ],
       "sources": {
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "net9.0": {
-          "targetAlias": "net9.0",
+        "net9.0-windows7.0": {
+          "targetAlias": "net9.0-windows",
           "projectReferences": {
             "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/RazerController.Native.csproj": {
               "projectPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController.Native/RazerController.Native.csproj"
@@ -1707,8 +1707,8 @@
       "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
-      "net9.0": {
-        "targetAlias": "net9.0",
+      "net9.0-windows7.0": {
+        "targetAlias": "net9.0-windows",
         "dependencies": {
           "Avalonia": {
             "target": "Package",
@@ -1754,9 +1754,18 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[9.0.11, 9.0.11]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
+          },
+          "Microsoft.WindowsDesktop.App.WindowsForms": {
+            "privateAssets": "none"
           }
         },
         "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.100/PortableRuntimeIdentifierGraph.json"

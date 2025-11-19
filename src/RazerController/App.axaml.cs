@@ -15,7 +15,7 @@ namespace RazerController;
 public partial class App : Application
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    private TrayIconService? _trayIconService;
+    private NativeTrayIconService? _trayIconService;
 
     public override void Initialize()
     {
@@ -53,11 +53,11 @@ public partial class App : Application
                 };
                 Logger.Info("Main window created successfully");
 
-                // Initialize tray icon
-                Logger.Info("Initializing system tray icon");
-                _trayIconService = new TrayIconService();
+                // Initialize native tray icon
+                Logger.Info("Initializing native system tray icon");
+                _trayIconService = new NativeTrayIconService();
                 _trayIconService.Initialize();
-                Logger.Info("System tray icon initialized");
+                Logger.Info("Native system tray icon initialized");
 
                 // Handle window close to minimize to tray
                 desktop.MainWindow.Closing += (s, e) =>

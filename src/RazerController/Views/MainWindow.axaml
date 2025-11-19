@@ -154,8 +154,7 @@
                             <StackPanel Spacing="5">
                                 <TextBlock Text="Mouse Acceleration:" FontWeight="Bold"/>
                                 <CheckBox IsChecked="{Binding WindowsMouseAcceleration}" 
-                                          Content="Enable pointer precision (mouse acceleration)"
-                                          Command="{Binding ToggleMouseAccelerationCommand}"/>
+                                          Content="Enable pointer precision (mouse acceleration)"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>

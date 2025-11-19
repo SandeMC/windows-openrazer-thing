@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RazerController.Native")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f7151c7b8bba94655ac2ad90a8729449410578fd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+798563faa50a335b7ee62f34e012ccf38eca5a33")]
 [assembly: System.Reflection.AssemblyProductAttribute("RazerController.Native")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RazerController.Native")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

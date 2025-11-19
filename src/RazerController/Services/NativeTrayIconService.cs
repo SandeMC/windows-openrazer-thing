@@ -1,26 +1,28 @@
 using System;
+using System.Runtime.InteropServices;
+using System.Drawing;
 using System.IO;
-using System.Reflection;
-using Avalonia;
-using Avalonia.Controls;
+using System.Windows.Forms;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Platform;
 using NLog;
-using RazerController.Views;
 using RazerController.ViewModels;
 
 namespace RazerController.Services;
 
-public class TrayIconService
+/// <summary>
+/// Native Windows tray icon implementation using Shell_NotifyIcon API
+/// </summary>
+public class NativeTrayIconService : IDisposable
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-    private TrayIcon? _trayIcon;
+    private NotifyIcon? _notifyIcon;
     private readonly IClassicDesktopStyleApplicationLifetime? _desktop;
+    private ContextMenuStrip? _contextMenu;
 
-    public TrayIconService()
+    public NativeTrayIconService()
     {
-        Logger.Info("Creating TrayIconService");
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        Logger.Info("Creating NativeTrayIconService");
+        if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             _desktop = desktop;
         }
@@ -30,7 +32,7 @@ public class TrayIconService
     {
         try
         {
-            Logger.Info("Initializing tray icon");
+            Logger.Info("Initializing native tray icon");
             
             if (_desktop == null)
             {
@@ -38,177 +40,161 @@ public class TrayIconService
                 return;
             }
 
-            WindowIcon? icon = null;
+            _notifyIcon = new NotifyIcon();
+            
+            // Try to load icon
+            Icon? icon = null;
             try
             {
-                // Try to load icon from file in Assets folder
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
                 string iconPath = Path.Combine(appDir, "Assets", "avalonia-logo.ico");
                 
                 if (File.Exists(iconPath))
                 {
-                    icon = new WindowIcon(iconPath);
+                    icon = new Icon(iconPath);
+                    Logger.Info($"Loaded tray icon from {iconPath}");
+                }
+                else
+                {
+                    Logger.Warn($"Icon file not found at {iconPath}");
+                    // Use default application icon
+                    icon = SystemIcons.Application;
                 }
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "Could not load tray icon");
+                Logger.Warn(ex, "Could not load tray icon, using default");
+                icon = SystemIcons.Application;
             }
 
-            _trayIcon = new TrayIcon
-            {
-                Icon = icon,
-                ToolTipText = "WindowsOpenrazerThing"
-            };
+            _notifyIcon.Icon = icon;
+            _notifyIcon.Text = "WindowsOpenrazerThing";
+            _notifyIcon.Visible = true;
 
-            var menu = new NativeMenu();
-            _trayIcon.Menu = menu;
-            _trayIcon.Clicked += (s, e) => ShowMainWindow();
-            
-            // When right-clicking to open menu, rebuild it dynamically based on current device
-            _trayIcon.Menu.Opening += (s, e) => 
-            {
-                PollDeviceValuesOnce();
-                UpdateTooltip();
-                BuildTrayMenu();
-            };
+            // Double-click to show window
+            _notifyIcon.DoubleClick += (s, e) => ShowMainWindow();
 
-            _trayIcon.IsVisible = true;
-            Logger.Info("Tray icon initialized");
+            // Build context menu
+            BuildContextMenu();
+
+            Logger.Info("Native tray icon initialized successfully");
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error initializing tray icon");
+            Logger.Error(ex, "Error initializing native tray icon");
         }
     }
 
-    private void PollDeviceValuesOnce()
+    private void BuildContextMenu()
     {
         try
         {
-            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm)
-            {
-                // Poll device values silently (no log noise)
-                vm.RefreshDeviceValuesCommand.Execute(null);
-            }
-        }
-        catch
-        {
-            // Silently fail - no log noise
-        }
-    }
+            _contextMenu = new ContextMenuStrip();
 
-    private void BuildTrayMenu()
-    {
-        try
-        {
-            if (_trayIcon?.Menu == null) return;
-            
-            var menu = _trayIcon.Menu;
-            menu.Items.Clear();
-            
-            // Show Window item
-            var showItem = new NativeMenuItem("Show Window");
+            // Show Window
+            var showItem = new ToolStripMenuItem("Show Window");
             showItem.Click += (s, e) => ShowMainWindow();
-            menu.Items.Add(showItem);
-            
-            // Refresh Devices item
-            var refreshItem = new NativeMenuItem("Refresh Devices");
+            _contextMenu.Items.Add(showItem);
+
+            // Refresh Devices
+            var refreshItem = new ToolStripMenuItem("Refresh Devices");
             refreshItem.Click += (s, e) => RefreshDevices();
-            menu.Items.Add(refreshItem);
-            
+            _contextMenu.Items.Add(refreshItem);
+
             // Add device-specific items if a device is selected
             if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm && vm.SelectedDevice != null)
             {
-                menu.Items.Add(new NativeMenuItemSeparator());
-                
+                _contextMenu.Items.Add(new ToolStripSeparator());
+
                 // RGB Effects submenu
                 if (vm.SelectedDevice.SupportsRGB)
                 {
-                    var rgbMenu = new NativeMenu();
-                    
+                    var rgbMenu = new ToolStripMenuItem("RGB Effects");
+
                     if (vm.SelectedDevice.SupportsStaticColor)
                     {
-                        var staticItem = new NativeMenuItem("Static Color");
+                        var staticItem = new ToolStripMenuItem("Static Color");
                         staticItem.Click += (s, e) => SetRGBEffect("static");
-                        rgbMenu.Items.Add(staticItem);
+                        rgbMenu.DropDownItems.Add(staticItem);
                     }
-                    
+
                     if (vm.SelectedDevice.SupportsSpectrum)
                     {
-                        var spectrumItem = new NativeMenuItem("Spectrum");
+                        var spectrumItem = new ToolStripMenuItem("Spectrum");
                         spectrumItem.Click += (s, e) => SetRGBEffect("spectrum");
-                        rgbMenu.Items.Add(spectrumItem);
+                        rgbMenu.DropDownItems.Add(spectrumItem);
                     }
-                    
+
                     if (vm.SelectedDevice.SupportsBreath)
                     {
-                        var breathItem = new NativeMenuItem("Breath");
+                        var breathItem = new ToolStripMenuItem("Breath");
                         breathItem.Click += (s, e) => SetRGBEffect("breath");
-                        rgbMenu.Items.Add(breathItem);
+                        rgbMenu.DropDownItems.Add(breathItem);
                     }
-                    
+
                     if (vm.SelectedDevice.SupportsNoneEffect)
                     {
-                        var offItem = new NativeMenuItem("Turn Off");
+                        var offItem = new ToolStripMenuItem("Turn Off");
                         offItem.Click += (s, e) => SetRGBEffect("off");
-                        rgbMenu.Items.Add(offItem);
+                        rgbMenu.DropDownItems.Add(offItem);
                     }
-                    
-                    var rgbMenuItem = new NativeMenuItem("RGB Effects");
-                    rgbMenuItem.Menu = rgbMenu;
-                    menu.Items.Add(rgbMenuItem);
+
+                    _contextMenu.Items.Add(rgbMenu);
                 }
-                
-                // DPI Stages submenu (for mice)
+
+                // DPI submenu (for mice)
                 if (vm.SelectedDevice.SupportsDPI)
                 {
-                    var dpiMenu = new NativeMenu();
+                    var dpiMenu = new ToolStripMenuItem("DPI");
                     int[] dpiStages = { 400, 800, 1600, 3200, 6400 };
-                    
+
                     foreach (int dpi in dpiStages)
                     {
-                        var dpiItem = new NativeMenuItem($"{dpi} DPI");
+                        var dpiItem = new ToolStripMenuItem($"{dpi} DPI");
                         dpiItem.Click += (s, e) => SetDPI(dpi);
-                        dpiMenu.Items.Add(dpiItem);
+                        dpiMenu.DropDownItems.Add(dpiItem);
                     }
-                    
-                    var dpiMenuItem = new NativeMenuItem("DPI");
-                    dpiMenuItem.Menu = dpiMenu;
-                    menu.Items.Add(dpiMenuItem);
+
+                    _contextMenu.Items.Add(dpiMenu);
                 }
-                
+
                 // Polling Rate submenu (for mice)
                 if (vm.SelectedDevice.SupportsPollRate && vm.PollRateOptions.Count > 0)
                 {
-                    var pollRateMenu = new NativeMenu();
-                    
+                    var pollRateMenu = new ToolStripMenuItem("Polling Rate");
+
                     foreach (int rate in vm.PollRateOptions)
                     {
-                        var rateItem = new NativeMenuItem($"{rate} Hz");
+                        var rateItem = new ToolStripMenuItem($"{rate} Hz");
                         rateItem.Click += (s, e) => SetPollRate(rate);
-                        pollRateMenu.Items.Add(rateItem);
+                        pollRateMenu.DropDownItems.Add(rateItem);
                     }
-                    
-                    var pollRateMenuItem = new NativeMenuItem("Polling Rate");
-                    pollRateMenuItem.Menu = pollRateMenu;
-                    menu.Items.Add(pollRateMenuItem);
+
+                    _contextMenu.Items.Add(pollRateMenu);
                 }
+
+                // Update tooltip with device info
+                UpdateTooltip();
             }
-            
-            menu.Items.Add(new NativeMenuItemSeparator());
-            
-            // Exit item
-            var exitItem = new NativeMenuItem("Exit");
+
+            _contextMenu.Items.Add(new ToolStripSeparator());
+
+            // Exit
+            var exitItem = new ToolStripMenuItem("Exit");
             exitItem.Click += (s, e) => _desktop?.Shutdown();
-            menu.Items.Add(exitItem);
+            _contextMenu.Items.Add(exitItem);
+
+            if (_notifyIcon != null)
+            {
+                _notifyIcon.ContextMenuStrip = _contextMenu;
+            }
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error building tray menu");
+            Logger.Error(ex, "Error building context menu");
         }
     }
-    
+
     private void SetRGBEffect(string effect)
     {
         try
@@ -240,7 +226,7 @@ public class TrayIconService
             Logger.Warn(ex, $"Error setting RGB effect: {effect}");
         }
     }
-    
+
     private void SetDPI(int dpi)
     {
         try
@@ -259,7 +245,7 @@ public class TrayIconService
             Logger.Warn(ex, $"Error setting DPI: {dpi}");
         }
     }
-    
+
     private void SetPollRate(int rate)
     {
         try
@@ -268,7 +254,6 @@ public class TrayIconService
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    // Find the index of this rate in the options
                     for (int i = 0; i < vm.PollRateOptions.Count; i++)
                     {
                         if (vm.PollRateOptions[i] == rate)
@@ -286,14 +271,19 @@ public class TrayIconService
             Logger.Warn(ex, $"Error setting poll rate: {rate}");
         }
     }
-    
+
     private void RefreshDevices()
     {
         try
         {
             if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm)
             {
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => vm.RefreshCommand.Execute(null));
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    vm.RefreshCommand.Execute(null);
+                    // Rebuild menu after refresh
+                    BuildContextMenu();
+                });
             }
         }
         catch (Exception ex)
@@ -306,56 +296,79 @@ public class TrayIconService
     {
         try
         {
-            if (_trayIcon == null) return;
-            
+            if (_notifyIcon == null) return;
+
             if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm && vm.SelectedDevice != null)
             {
                 string deviceInfo = $"WindowsOpenrazerThing\n{vm.SelectedDevice.Name}";
-                
+
                 if (vm.SelectedDevice.SupportsDPI && vm.DpiValue > 0)
                 {
                     deviceInfo += $"\nDPI: {vm.DpiValue}";
                 }
-                
+
                 if (vm.SelectedDevice.SupportsPollRate && vm.PollRate > 0)
                 {
                     deviceInfo += $"\nPoll Rate: {vm.PollRate}Hz";
                 }
-                
+
                 if (vm.SelectedDevice.SupportsBattery && vm.BatteryLevel.HasValue)
                 {
                     deviceInfo += $"\nBattery: {vm.BatteryLevel}%{(vm.IsCharging ? " (Charging)" : "")}";
                 }
-                
-                _trayIcon.ToolTipText = deviceInfo;
+
+                _notifyIcon.Text = deviceInfo.Length > 63 ? deviceInfo.Substring(0, 63) : deviceInfo;
             }
             else
             {
-                _trayIcon.ToolTipText = "WindowsOpenrazerThing";
+                _notifyIcon.Text = "WindowsOpenrazerThing";
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Silently fail
+            Logger.Debug(ex, "Error updating tooltip");
         }
     }
 
     private void ShowMainWindow()
     {
-        if (_desktop?.MainWindow != null)
+        try
         {
-            _desktop.MainWindow.Show();
-            _desktop.MainWindow.WindowState = WindowState.Normal;
-            _desktop.MainWindow.Activate();
+            if (_desktop?.MainWindow != null)
+            {
+                _desktop.MainWindow.Show();
+                _desktop.MainWindow.WindowState = Avalonia.Controls.WindowState.Normal;
+                _desktop.MainWindow.Activate();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error showing main window");
         }
     }
 
     public void Dispose()
     {
-        if (_trayIcon != null)
+        try
         {
-            _trayIcon.IsVisible = false;
-            _trayIcon.Dispose();
+            if (_notifyIcon != null)
+            {
+                _notifyIcon.Visible = false;
+                _notifyIcon.Dispose();
+                _notifyIcon = null;
+            }
+
+            if (_contextMenu != null)
+            {
+                _contextMenu.Dispose();
+                _contextMenu = null;
+            }
+
+            Logger.Info("Native tray icon disposed");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error disposing native tray icon");
         }
     }
 }
