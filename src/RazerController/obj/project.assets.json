@@ -1664,7 +1664,7 @@
     ]
   },
   "packageFolders": {
-    "/home/runner/.nuget/packages/": {}
+    "/home/runner/work/windows-openrazer-thing/.codeql-scratch/dbs/csharp/working/packages": {}
   },
   "project": {
     "version": "1.0.0",
@@ -1672,7 +1672,7 @@
       "projectUniqueName": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/RazerController.csproj",
       "projectName": "WindowsOpenrazerThing",
       "projectPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/RazerController.csproj",
-      "packagesPath": "/home/runner/.nuget/packages/",
+      "packagesPath": "/home/runner/work/windows-openrazer-thing/.codeql-scratch/dbs/csharp/working/packages",
       "outputPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
@@ -1755,6 +1755,18 @@
         "assetTargetFallback": true,
         "warn": true,
         "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[9.0.11, 9.0.11]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.linux-x64",
+            "version": "[9.0.11, 9.0.11]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[9.0.11, 9.0.11]"
+          },
           {
             "name": "Microsoft.WindowsDesktop.App.Ref",
             "version": "[9.0.11, 9.0.11]"
