@@ -97,14 +97,14 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: RazerController-${{ matrix.platform }}-${{ matrix.configuration }}
+        name: WindowsOpenrazerThing-${{ matrix.platform }}-${{ matrix.configuration }}
         path: src/RazerController/bin/${{ matrix.configuration }}/net9.0/win-x64/publish/
     
     - name: Create release archive
       if: github.event_name == 'release'
       run: |
         $publishDir = "src\RazerController\bin\${{ matrix.configuration }}\net9.0\win-x64\publish"
-        Compress-Archive -Path "$publishDir\*" -DestinationPath "RazerController-win-${{ matrix.platform }}.zip"
+        Compress-Archive -Path "$publishDir\*" -DestinationPath "WindowsOpenrazerThing-win-${{ matrix.platform }}.zip"
       shell: pwsh
     
     - name: Upload release asset
@@ -114,6 +114,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./RazerController-win-${{ matrix.platform }}.zip
-        asset_name: RazerController-win-${{ matrix.platform }}.zip
+        asset_path: ./WindowsOpenrazerThing-win-${{ matrix.platform }}.zip
+        asset_name: WindowsOpenrazerThing-win-${{ matrix.platform }}.zip
         asset_content_type: application/zip

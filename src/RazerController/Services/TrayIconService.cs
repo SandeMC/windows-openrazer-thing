@@ -58,7 +58,7 @@ public class TrayIconService
             _trayIcon = new TrayIcon
             {
                 Icon = icon,
-                ToolTipText = "Windows OpenRazer Thing"
+                ToolTipText = "WindowsOpenrazerThing"
             };
 
             var menu = new NativeMenu();
@@ -135,7 +135,7 @@ public class TrayIconService
             
             if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm && vm.SelectedDevice != null)
             {
-                string deviceInfo = $"Windows OpenRazer Thing\n{vm.SelectedDevice.Name}";
+                string deviceInfo = $"WindowsOpenrazerThing\n{vm.SelectedDevice.Name}";
                 
                 if (vm.SelectedDevice.SupportsDPI && vm.DpiValue > 0)
                 {
@@ -156,7 +156,7 @@ public class TrayIconService
             }
             else
             {
-                _trayIcon.ToolTipText = "Windows OpenRazer Thing";
+                _trayIcon.ToolTipText = "WindowsOpenrazerThing";
             }
         }
         catch

@@ -1670,7 +1670,7 @@
     "version": "1.0.0",
     "restore": {
       "projectUniqueName": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/RazerController.csproj",
-      "projectName": "RazerController",
+      "projectName": "WindowsOpenrazerThing",
       "projectPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/RazerController.csproj",
       "packagesPath": "/home/runner/.nuget/packages/",
       "outputPath": "/home/runner/work/windows-openrazer-thing/windows-openrazer-thing/src/RazerController/obj/",
