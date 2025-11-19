@@ -82,7 +82,12 @@ public struct Device
 [StructLayout(LayoutKind.Sequential)]
 public struct HidDevice
 {
-    public Device dev;
+    public ushort product;          // __u16 product
+    public int type;                // enum hid_type type (enums are typically int)
+    public Device dev;              // struct device dev
+    public IntPtr ll_driver;        // struct hid_ll_driver *ll_driver
+    public uint status;             // unsigned int status
+    public IntPtr driver;           // struct hid_driver *driver
 }
 
 [StructLayout(LayoutKind.Sequential)]
