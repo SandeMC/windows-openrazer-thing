@@ -131,6 +131,34 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                    
+                    <!-- Windows Mouse Settings -->
+                    <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
+                        <StackPanel Spacing="10">
+                            <TextBlock Text="Windows Mouse Settings" FontSize="16" FontWeight="Bold"/>
+                            
+                            <!-- Sensitivity Control -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Pointer Speed (Sensitivity):" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider Grid.Column="0" Minimum="1" Maximum="20" 
+                                            Value="{Binding WindowsSensitivity}" 
+                                            TickFrequency="1" 
+                                            IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding WindowsSensitivity}" Width="40" Margin="10,0"/>
+                                </Grid>
+                                <Button Content="Apply Sensitivity" Command="{Binding SetWindowsSensitivityCommand}"/>
+                            </StackPanel>
+                            
+                            <!-- Mouse Acceleration Toggle -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Mouse Acceleration:" FontWeight="Bold"/>
+                                <CheckBox IsChecked="{Binding WindowsMouseAcceleration}" 
+                                          Content="Enable pointer precision (mouse acceleration)"
+                                          Command="{Binding ToggleMouseAccelerationCommand}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
 
                     <!-- RGB Lighting Controls - MOVED BELOW MOUSE SETTINGS -->
                     <Border BorderBrush="Gray" BorderThickness="1" Padding="10" 

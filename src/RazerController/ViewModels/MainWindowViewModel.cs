@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using NLog;
 using RazerController.Models;
 using RazerController.Native;
+using RazerController.Services;
 
 namespace RazerController.ViewModels;
 
@@ -16,6 +17,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly RazerDeviceManager _deviceManager;
+    private readonly WindowsMouseSettingsService _mouseSettingsService;
     private CancellationTokenSource? _pollingCancellation;
     private Task? _pollingTask;
 
@@ -184,6 +186,12 @@ public partial class MainWindowViewModel : ViewModelBase
     
     [ObservableProperty]
     private bool _isCharging;
+    
+    [ObservableProperty]
+    private int _windowsSensitivity = 10; // Default Windows sensitivity (1-20)
+    
+    [ObservableProperty]
+    private bool _windowsMouseAcceleration = true;
 
     public Color PreviewColor => Color.FromRgb(RedValue, GreenValue, BlueValue);
 
@@ -191,7 +199,11 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Logger.Info("Initializing MainWindowViewModel");
         _deviceManager = new RazerDeviceManager();
-        Logger.Info("RazerDeviceManager created");
+        _mouseSettingsService = new WindowsMouseSettingsService();
+        Logger.Info("RazerDeviceManager and MouseSettingsService created");
+        
+        // Load current Windows mouse settings
+        LoadWindowsMouseSettings();
         
         // Auto-initialize devices on startup
         Task.Run(() => 
@@ -200,6 +212,23 @@ public partial class MainWindowViewModel : ViewModelBase
             Task.Delay(500).Wait();
             Avalonia.Threading.Dispatcher.UIThread.Post(() => Initialize());
         });
+    }
+    
+    private void LoadWindowsMouseSettings()
+    {
+        var sensitivity = _mouseSettingsService.GetMouseSensitivity();
+        if (sensitivity.HasValue)
+        {
+            WindowsSensitivity = sensitivity.Value;
+            Logger.Info($"Loaded Windows mouse sensitivity: {sensitivity.Value}");
+        }
+        
+        var acceleration = _mouseSettingsService.GetMouseAcceleration();
+        if (acceleration.HasValue)
+        {
+            WindowsMouseAcceleration = acceleration.Value;
+            Logger.Info($"Loaded Windows mouse acceleration: {acceleration.Value}");
+        }
     }
 
     [RelayCommand]
@@ -522,6 +551,65 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Logger.Error(ex, "Error setting poll rate");
             StatusMessage = $"Error setting poll rate: {ex.Message}";
+        }
+    }
+    
+    [RelayCommand]
+    private void SetWindowsSensitivity()
+    {
+        try
+        {
+            Logger.Info($"Setting Windows mouse sensitivity to {WindowsSensitivity}");
+            bool success = _mouseSettingsService.SetMouseSensitivity(WindowsSensitivity);
+            
+            if (success)
+            {
+                StatusMessage = $"Windows mouse sensitivity set to {WindowsSensitivity}";
+                Logger.Info("Windows mouse sensitivity set successfully");
+            }
+            else
+            {
+                StatusMessage = "Failed to set Windows mouse sensitivity";
+                Logger.Warn("Failed to set Windows mouse sensitivity");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error setting Windows mouse sensitivity");
+            StatusMessage = $"Error setting sensitivity: {ex.Message}";
+        }
+    }
+    
+    [RelayCommand]
+    private void ToggleMouseAcceleration()
+    {
+        try
+        {
+            // Toggle the value
+            WindowsMouseAcceleration = !WindowsMouseAcceleration;
+            
+            Logger.Info($"Setting Windows mouse acceleration to {WindowsMouseAcceleration}");
+            bool success = _mouseSettingsService.SetMouseAcceleration(WindowsMouseAcceleration);
+            
+            if (success)
+            {
+                StatusMessage = $"Windows mouse acceleration {(WindowsMouseAcceleration ? "enabled" : "disabled")}";
+                Logger.Info("Windows mouse acceleration toggled successfully");
+            }
+            else
+            {
+                // Revert the toggle if it failed
+                WindowsMouseAcceleration = !WindowsMouseAcceleration;
+                StatusMessage = "Failed to toggle Windows mouse acceleration";
+                Logger.Warn("Failed to toggle Windows mouse acceleration");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error toggling Windows mouse acceleration");
+            StatusMessage = $"Error toggling acceleration: {ex.Message}";
+            // Revert the toggle if it failed
+            WindowsMouseAcceleration = !WindowsMouseAcceleration;
         }
     }
 
