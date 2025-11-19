@@ -21,7 +21,21 @@ sealed class Program
             var logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
             Directory.CreateDirectory(logDirectory);
             
-            Logger.Info("===== Razer Controller Starting =====");
+            // Check if DEBUG file exists to enable debug logging
+            var debugFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DEBUG");
+            if (File.Exists(debugFilePath))
+            {
+                // Enable DEBUG level logging
+                foreach (var rule in LogManager.Configuration.LoggingRules)
+                {
+                    rule.EnableLoggingForLevel(LogLevel.Debug);
+                    rule.EnableLoggingForLevel(LogLevel.Trace);
+                }
+                LogManager.ReconfigExistingLoggers();
+                Logger.Info("DEBUG file detected - Debug logging enabled");
+            }
+            
+            Logger.Info("===== Windows OpenRazer Thing Starting =====");
             Logger.Info($"Application Base Directory: {AppDomain.CurrentDomain.BaseDirectory}");
             Logger.Info($"Working Directory: {Environment.CurrentDirectory}");
             Logger.Info($"OS: {Environment.OSVersion}");
@@ -29,7 +43,7 @@ sealed class Program
             
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
             
-            Logger.Info("===== Razer Controller Exiting =====");
+            Logger.Info("===== Windows OpenRazer Thing Exiting =====");
         }
         catch (Exception ex)
         {

@@ -1,6 +1,8 @@
-# Contributing to Razer Controller
+# Contributing to Windows OpenRazer Thing
 
-Thank you for your interest in contributing to Razer Controller! This document provides guidelines and instructions for contributing.
+> **Note**: This is a 100% AI-generated proof of concept. All development and maintenance is done exclusively with AI assistance.
+
+Thank you for your interest in contributing to Windows OpenRazer Thing! This document provides guidelines and instructions for contributing.
 
 ## Getting Started
 
@@ -38,16 +40,17 @@ Thank you for your interest in contributing to Razer Controller! This document p
 
 ```
 windows-openrazer-thing/
-├── .github/workflows/    # CI/CD workflows
-├── native/              # Native C++ OpenRazer DLL
+├── .github/workflows/          # CI/CD workflows
+├── native/                     # Native C++ OpenRazer code (from openrazer-win32)
 ├── src/
 │   ├── RazerController/        # Main Avalonia UI application
 │   │   ├── Views/             # XAML UI views
 │   │   ├── ViewModels/        # MVVM view models
 │   │   ├── Models/            # Data models
-│   │   └── Services/          # Application services
-│   └── RazerController.Native/ # P/Invoke wrapper
-└── RazerController.sln  # Solution file
+│   │   ├── Services/          # Application services (tray, etc.)
+│   │   └── NLog.config        # Logging configuration
+│   └── RazerController.Native/ # P/Invoke wrapper for native DLL
+└── RazerController.sln         # Main solution file
 ```
 
 ## Development Guidelines
