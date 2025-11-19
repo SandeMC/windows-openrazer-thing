@@ -70,8 +70,8 @@ public class WindowsMouseSettingsService
                 bool success = User32.SystemParametersInfo(
                     User32.SystemParametersInfoAction.SPI_SETMOUSESPEED,
                     0,
-                    &sensitivity,
-                    User32.SystemParametersInfoFlags.None);
+                    sensitivity,
+                    0);
                 
                 int lastError = Marshal.GetLastWin32Error();
                 
