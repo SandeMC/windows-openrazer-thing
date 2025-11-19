@@ -75,7 +75,7 @@ public struct Device
     public IntPtr driver_data;      // void* driver_data
     public uint attr_count;         // unsigned int attr_count
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
-    public IntPtr[] attr_list;      // struct device_attribute* attr_list[64]
+    public IntPtr[] attr_list;      // struct device_attribute* attr_list[64] - inline array of 64 pointers
     public IntPtr parent_usb_interface; // struct usb_interface* parent_usb_interface
 }
 

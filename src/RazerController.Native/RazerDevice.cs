@@ -51,23 +51,17 @@ public class RazerDevice
     {
         var attributes = new Dictionary<string, DeviceAttribute>();
         
-        // Check if attr_list pointer is null
-        if (_device.attr_list == IntPtr.Zero)
+        // Check if attr_list array is null
+        if (_device.attr_list == null)
         {
-            Logger.Warn("attr_list pointer is null, returning empty attributes dictionary");
+            Logger.Warn("attr_list array is null, returning empty attributes dictionary");
             return attributes;
         }
         
         // The native attr_list array has a maximum size of 64 elements
         const int MAX_ATTR_LIST_SIZE = 64;
         int actualCount = Math.Min((int)_device.attr_count, MAX_ATTR_LIST_SIZE);
-        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, attr_list array length={_device.attr_list?.Length ?? 0}, reading {actualCount} attributes");
-        
-        if (_device.attr_list == null)
-        {
-            Logger.Warn("attr_list array is null");
-            return;
-        }
+        Logger.Debug($"Loading attributes: attr_count={_device.attr_count}, attr_list array length={_device.attr_list.Length}, reading {actualCount} attributes");
         
         for (int i = 0; i < actualCount; i++)
         {
