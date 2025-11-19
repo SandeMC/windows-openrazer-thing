@@ -35,7 +35,7 @@ sealed class Program
                 Logger.Info("DEBUG file detected - Debug logging enabled");
             }
             
-            Logger.Info("===== Windows OpenRazer Thing Starting =====");
+            Logger.Info("===== WindowsOpenrazerThing Starting =====");
             Logger.Info($"Application Base Directory: {AppDomain.CurrentDomain.BaseDirectory}");
             Logger.Info($"Working Directory: {Environment.CurrentDirectory}");
             Logger.Info($"OS: {Environment.OSVersion}");
@@ -43,7 +43,7 @@ sealed class Program
             
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
             
-            Logger.Info("===== Windows OpenRazer Thing Exiting =====");
+            Logger.Info("===== WindowsOpenrazerThing Exiting =====");
         }
         catch (Exception ex)
         {
@@ -54,7 +54,7 @@ sealed class Program
             {
                 var errorFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FATAL_ERROR.txt");
                 File.WriteAllText(errorFile, 
-                    $"FATAL ERROR - Razer Controller failed to start\n\n" +
+                    $"FATAL ERROR - WindowsOpenrazerThing failed to start\n\n" +
                     $"Time: {DateTime.Now}\n" +
                     $"Error: {ex.Message}\n\n" +
                     $"Stack Trace:\n{ex.StackTrace}\n\n" +

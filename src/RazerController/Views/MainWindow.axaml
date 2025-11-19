@@ -7,7 +7,7 @@
         x:Class="RazerController.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Windows OpenRazer Thing"
+        Title="WindowsOpenrazerThing"
         Width="900" Height="650"
         MinWidth="700" MinHeight="500">
 
