@@ -93,9 +93,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private int _pollRate = 1000;
     
     [ObservableProperty]
-    private int _selectedPollRateIndex = 3; // Default to 1000 Hz (index 3)
+    private int _selectedPollRateIndex = 2; // Default to 1000 Hz (index 2)
     
-    public int[] PollRateOptions { get; } = new[] { 125, 250, 500, 1000, 2000, 4000, 8000 };
+    // Standard poll rates supported by most Razer devices
+    // Note: Some newer devices support 2000Hz, 4000Hz, and 8000Hz, but these require
+    // device-specific driver support. The OpenRazer driver defaults to 500Hz for
+    // unsupported rates, so we limit options to the most commonly supported rates.
+    public int[] PollRateOptions { get; } = new[] { 125, 500, 1000 };
 
     public Color PreviewColor => Color.FromRgb(RedValue, GreenValue, BlueValue);
 
@@ -306,9 +310,37 @@ public partial class MainWindowViewModel : ViewModelBase
                 int pollRate = PollRateOptions[SelectedPollRateIndex];
                 Logger.Info($"Setting poll rate to {pollRate}Hz");
                 bool success = SelectedDevice.Device.SetPollRate(pollRate);
-                StatusMessage = success ? $"Set poll rate to {pollRate}Hz" : "Failed to set poll rate";
-                if (success) Logger.Info($"Poll rate set to {pollRate}Hz successfully");
-                else Logger.Warn($"Failed to set poll rate to {pollRate}Hz");
+                
+                if (success)
+                {
+                    Logger.Info($"Poll rate write command succeeded for {pollRate}Hz");
+                    
+                    // Verify by reading back the poll rate
+                    var actualPollRate = SelectedDevice.Device.GetPollRate();
+                    if (actualPollRate.HasValue)
+                    {
+                        Logger.Info($"Verified poll rate: {actualPollRate.Value}Hz");
+                        if (actualPollRate.Value == pollRate)
+                        {
+                            StatusMessage = $"Poll rate set to {pollRate}Hz";
+                        }
+                        else
+                        {
+                            StatusMessage = $"Poll rate set, but device reports {actualPollRate.Value}Hz (requested {pollRate}Hz)";
+                            Logger.Warn($"Poll rate mismatch: requested {pollRate}Hz, device reports {actualPollRate.Value}Hz");
+                        }
+                    }
+                    else
+                    {
+                        StatusMessage = $"Poll rate command sent, but could not verify";
+                        Logger.Warn("Failed to read back poll rate after setting");
+                    }
+                }
+                else
+                {
+                    StatusMessage = "Failed to set poll rate";
+                    Logger.Warn($"Failed to set poll rate to {pollRate}Hz");
+                }
             }
         }
         catch (Exception ex)
