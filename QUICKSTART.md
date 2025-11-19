@@ -1,6 +1,8 @@
 # Quick Start Guide
 
-Get up and running with Razer Controller in minutes!
+> **⚠️ AI-Generated POC**: This application is 100% vibecoded with AI. May not work correctly.
+
+Get up and running with Windows OpenRazer Thing in minutes!
 
 ## For End Users
 
@@ -8,9 +10,9 @@ Get up and running with Razer Controller in minutes!
 
 1. **Download** the latest release from [Releases](../../releases)
 2. **Extract** the ZIP file to a folder
-3. **Run** `RazerController.exe`
-4. **Click** "Initialize Devices" to detect your Razer devices
-5. **Select** your device and start controlling it!
+3. **Run** `WindowsOpenrazerThing.exe` (or `RazerController.exe`)
+4. **Wait** for automatic device detection (happens on startup)
+5. **Select** your device from the list and start controlling it!
 
 ### First Time Setup
 
@@ -18,9 +20,9 @@ When you first run the application:
 
 1. **Plug in your Razer device** (keyboard, mouse, headset, etc.)
 2. **Launch the application**
-3. **Click "Initialize Devices"** - this detects all connected Razer devices
-4. **Select a device** from the list on the left
-5. Start customizing!
+3. **Devices Auto-Detect** - the app automatically finds all connected Razer devices on startup
+4. **First device is auto-selected** - just start using it!
+5. Or **select a different device** from the list on the left
 
 ## For Developers
 
@@ -63,16 +65,23 @@ dotnet run --project src/RazerController
 
 ### Changing RGB Colors
 
-1. Select your device
-2. Use the **RGB sliders** to pick a color
+1. Select your device (or use the auto-selected one)
+2. Use the **RGB sliders** to pick a color (see live preview)
 3. Click **"Set Static Color"**
+4. RGB automatically enables if it was off
 
 ### Setting Up Your Mouse
 
 1. Select your mouse device
-2. Adjust **DPI** (sensitivity)
-3. Set **Polling Rate** (125Hz, 250Hz, 500Hz, or 1000Hz)
-4. Click the respective "Set" buttons
+2. Adjust **DPI** using:
+   - The slider for quick changes
+   - Or type exact value in the number box
+   - Standard anchors: 400, 800, 1600, 3200, 6400
+3. Set **Polling Rate** using:
+   - The slider (shows only supported rates)
+   - Or dropdown menu
+4. Click "Set" buttons to apply
+5. Values update automatically every second
 
 ### Using Effects
 
@@ -83,10 +92,12 @@ dotnet run --project src/RazerController
 
 ### System Tray
 
-- **Close Window**: Minimizes to system tray
-- **Right-click Tray Icon**: Show menu
+- **Close Window**: Minimizes to system tray (doesn't quit)
+- **Click Tray Icon**: Restore window
+- **Right-click Tray Icon**: Open menu
   - Show: Restore window
-  - Exit: Quit application
+  - Exit: Quit application completely
+- Device values poll once when menu opens (silent)
 
 ## Troubleshooting
 
@@ -132,16 +143,19 @@ A: No! This application works independently of Synapse.
 A: It's recommended to close Synapse when using this application.
 
 **Q: What devices are supported?**  
-A: All devices supported by OpenRazer. See the [device list](https://openrazer.github.io/#devices).
+A: All devices supported by OpenRazer. See the [device list](https://openrazer.github.io/#devices). Note: Driver code cutoff is May 23, 2025.
 
 **Q: Is this safe for my device?**  
-A: Yes, it uses the same protocols as the official Razer software.
+A: Yes, it uses the same protocols as the official Razer software. However, this is an AI-generated POC, so use at your own risk.
 
 **Q: Can I use this on Linux?**  
 A: This is a Windows-specific port. For Linux, use [OpenRazer](https://openrazer.github.io/) directly.
 
 **Q: Why do I need Visual Studio to build?**  
 A: Only if building from source. The native DLL requires C++ compilation. Pre-built releases don't require Visual Studio.
+
+**Q: How do I enable debug logging?**  
+A: Create an empty file named `DEBUG` in the application folder and restart the app.
 
 ## Support
 
