@@ -23,13 +23,13 @@ public partial class ColorPickerDialog : Window
     {
         InitializeComponent();
         
-        // Get references to controls
-        _colorPreview = this.FindControl<Border>("ColorPreview");
-        _colorPalette = this.FindControl<ItemsControl>("ColorPalette");
-        
         // Initialize after controls are loaded
         this.Opened += (s, e) =>
         {
+            // Get references to controls after visual tree is built
+            _colorPreview = this.FindControl<Border>("ColorPreview");
+            _colorPalette = this.FindControl<ItemsControl>("ColorPalette");
+            
             _selectedRed = RedValue;
             _selectedGreen = GreenValue;
             _selectedBlue = BlueValue;

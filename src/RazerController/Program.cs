@@ -77,9 +77,9 @@ sealed class Program
                     var fileTarget = config.FindTargetByName<NLog.Targets.FileTarget>("logfile");
                     if (fileTarget != null)
                     {
-                        // Set the log file path using NLog's layout renderer syntax
-                        fileTarget.FileName = Path.Combine(logDirectory, "windows-openrazer-thing-${shortdate}.log");
-                        fileTarget.ArchiveFileName = Path.Combine(logDirectory, "archives", "windows-openrazer-thing-{#}.log");
+                        // Use forward slashes and let NLog handle the layout renderers
+                        fileTarget.FileName = $"{logDirectory}/windows-openrazer-thing-${{shortdate}}.log";
+                        fileTarget.ArchiveFileName = $"{logDirectory}/archives/windows-openrazer-thing-{{#}}.log";
                     }
                     LogManager.Configuration = config;
                 }
