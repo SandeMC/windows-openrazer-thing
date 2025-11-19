@@ -47,6 +47,10 @@
             <ScrollViewer Grid.Column="1">
                 <StackPanel IsEnabled="{Binding SelectedDevice, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="15">
                     
+                    <!-- Refresh Button for Selected Device -->
+                    <Button Content="Refresh Device Values" Command="{Binding RefreshDeviceValuesCommand}" 
+                            HorizontalAlignment="Center" Padding="20,5"/>
+                    
                     <!-- Device Info -->
                     <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
                         <StackPanel Spacing="5">
@@ -94,7 +98,7 @@
                                 <Slider Minimum="100" Maximum="20000" 
                                         Value="{Binding DpiValue}" 
                                         TickFrequency="100" 
-                                        IsSnapToTickEnabled="False"
+                                        IsSnapToTickEnabled="True"
                                         TickPlacement="BottomRight"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <NumericUpDown Grid.Column="0" Minimum="100" Maximum="20000" Increment="100"
