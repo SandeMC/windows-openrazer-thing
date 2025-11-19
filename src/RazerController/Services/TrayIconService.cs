@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
@@ -8,6 +9,8 @@ using Avalonia.Platform;
 using NLog;
 using RazerController.Views;
 using RazerController.ViewModels;
+using RazerController.Models;
+using RazerController.Native;
 
 namespace RazerController.Services;
 
@@ -120,82 +123,92 @@ public class TrayIconService
             refreshItem.Click += (s, e) => RefreshDevices();
             menu.Items.Add(refreshItem);
             
-            // Add device-specific items if a device is selected
-            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm && vm.SelectedDevice != null)
+            // Add device-specific items for the first mouse device found
+            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm)
             {
-                menu.Items.Add(new NativeMenuItemSeparator());
+                // Find the first mouse device
+                var mouseDevice = vm.Devices.FirstOrDefault(d => d.Device.DeviceType == RazerDeviceType.Mouse);
                 
-                // RGB Effects submenu
-                if (vm.SelectedDevice.SupportsRGB)
+                if (mouseDevice != null)
                 {
-                    var rgbMenu = new NativeMenu();
+                    menu.Items.Add(new NativeMenuItemSeparator());
                     
-                    if (vm.SelectedDevice.SupportsStaticColor)
+                    // RGB Effects submenu (renamed to RGB Mode as per requirements)
+                    if (mouseDevice.SupportsRGB)
                     {
-                        var staticItem = new NativeMenuItem("Static Color");
-                        staticItem.Click += (s, e) => SetRGBEffect("static");
-                        rgbMenu.Items.Add(staticItem);
+                        var rgbMenu = new NativeMenu();
+                        
+                        if (mouseDevice.SupportsStaticColor)
+                        {
+                            var staticItem = new NativeMenuItem("Static Color");
+                            staticItem.Click += (s, e) => SetRGBEffect("static", mouseDevice);
+                            rgbMenu.Items.Add(staticItem);
+                        }
+                        
+                        if (mouseDevice.SupportsSpectrum)
+                        {
+                            var spectrumItem = new NativeMenuItem("Spectrum");
+                            spectrumItem.Click += (s, e) => SetRGBEffect("spectrum", mouseDevice);
+                            rgbMenu.Items.Add(spectrumItem);
+                        }
+                        
+                        if (mouseDevice.SupportsBreath)
+                        {
+                            var breathItem = new NativeMenuItem("Breath");
+                            breathItem.Click += (s, e) => SetRGBEffect("breath", mouseDevice);
+                            rgbMenu.Items.Add(breathItem);
+                        }
+                        
+                        if (mouseDevice.SupportsNoneEffect)
+                        {
+                            var offItem = new NativeMenuItem("Turn Off");
+                            offItem.Click += (s, e) => SetRGBEffect("off", mouseDevice);
+                            rgbMenu.Items.Add(offItem);
+                        }
+                        
+                        var rgbMenuItem = new NativeMenuItem("RGB Mode");
+                        rgbMenuItem.Menu = rgbMenu;
+                        menu.Items.Add(rgbMenuItem);
                     }
                     
-                    if (vm.SelectedDevice.SupportsSpectrum)
+                    // DPI Stages submenu
+                    if (mouseDevice.SupportsDPI)
                     {
-                        var spectrumItem = new NativeMenuItem("Spectrum");
-                        spectrumItem.Click += (s, e) => SetRGBEffect("spectrum");
-                        rgbMenu.Items.Add(spectrumItem);
+                        var dpiMenu = new NativeMenu();
+                        int[] dpiStages = { 400, 800, 1600, 3200, 6400 };
+                        
+                        foreach (int dpi in dpiStages)
+                        {
+                            var dpiItem = new NativeMenuItem($"{dpi} DPI");
+                            dpiItem.Click += (s, e) => SetDPI(dpi, mouseDevice);
+                            dpiMenu.Items.Add(dpiItem);
+                        }
+                        
+                        var dpiMenuItem = new NativeMenuItem("DPI");
+                        dpiMenuItem.Menu = dpiMenu;
+                        menu.Items.Add(dpiMenuItem);
                     }
                     
-                    if (vm.SelectedDevice.SupportsBreath)
+                    // Polling Rate submenu
+                    if (mouseDevice.SupportsPollRate)
                     {
-                        var breathItem = new NativeMenuItem("Breath");
-                        breathItem.Click += (s, e) => SetRGBEffect("breath");
-                        rgbMenu.Items.Add(breathItem);
+                        var pollRateMenu = new NativeMenu();
+                        
+                        // Get supported polling rates from the device or use standard values
+                        var supportedRates = mouseDevice.Device.GetSupportedPollRates();
+                        int[] pollRates = supportedRates?.ToArray() ?? new[] { 125, 250, 500, 1000, 2000, 4000, 8000 };
+                        
+                        foreach (int rate in pollRates)
+                        {
+                            var rateItem = new NativeMenuItem($"{rate} Hz");
+                            rateItem.Click += (s, e) => SetPollRate(rate, mouseDevice);
+                            pollRateMenu.Items.Add(rateItem);
+                        }
+                        
+                        var pollRateMenuItem = new NativeMenuItem("Polling Rate");
+                        pollRateMenuItem.Menu = pollRateMenu;
+                        menu.Items.Add(pollRateMenuItem);
                     }
-                    
-                    if (vm.SelectedDevice.SupportsNoneEffect)
-                    {
-                        var offItem = new NativeMenuItem("Turn Off");
-                        offItem.Click += (s, e) => SetRGBEffect("off");
-                        rgbMenu.Items.Add(offItem);
-                    }
-                    
-                    var rgbMenuItem = new NativeMenuItem("RGB Effects");
-                    rgbMenuItem.Menu = rgbMenu;
-                    menu.Items.Add(rgbMenuItem);
-                }
-                
-                // DPI Stages submenu (for mice)
-                if (vm.SelectedDevice.SupportsDPI)
-                {
-                    var dpiMenu = new NativeMenu();
-                    int[] dpiStages = { 400, 800, 1600, 3200, 6400 };
-                    
-                    foreach (int dpi in dpiStages)
-                    {
-                        var dpiItem = new NativeMenuItem($"{dpi} DPI");
-                        dpiItem.Click += (s, e) => SetDPI(dpi);
-                        dpiMenu.Items.Add(dpiItem);
-                    }
-                    
-                    var dpiMenuItem = new NativeMenuItem("DPI");
-                    dpiMenuItem.Menu = dpiMenu;
-                    menu.Items.Add(dpiMenuItem);
-                }
-                
-                // Polling Rate submenu (for mice)
-                if (vm.SelectedDevice.SupportsPollRate && vm.PollRateOptions.Count > 0)
-                {
-                    var pollRateMenu = new NativeMenu();
-                    
-                    foreach (int rate in vm.PollRateOptions)
-                    {
-                        var rateItem = new NativeMenuItem($"{rate} Hz");
-                        rateItem.Click += (s, e) => SetPollRate(rate);
-                        pollRateMenu.Items.Add(rateItem);
-                    }
-                    
-                    var pollRateMenuItem = new NativeMenuItem("Polling Rate");
-                    pollRateMenuItem.Menu = pollRateMenu;
-                    menu.Items.Add(pollRateMenuItem);
                 }
             }
             
@@ -212,7 +225,7 @@ public class TrayIconService
         }
     }
     
-    private void SetRGBEffect(string effect)
+    private void SetRGBEffect(string effect, DeviceModel device)
     {
         try
         {
@@ -220,21 +233,23 @@ public class TrayIconService
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
+                    bool success = false;
                     switch (effect)
                     {
                         case "static":
-                            vm.SetStaticColorCommand.Execute(null);
+                            success = device.Device.SetStaticColor(vm.RedValue, vm.GreenValue, vm.BlueValue);
                             break;
                         case "spectrum":
-                            vm.SetSpectrumCommand.Execute(null);
+                            success = device.Device.SetSpectrumEffect();
                             break;
                         case "breath":
-                            vm.SetBreathCommand.Execute(null);
+                            success = device.Device.SetBreathEffect(vm.RedValue, vm.GreenValue, vm.BlueValue);
                             break;
                         case "off":
-                            vm.TurnOffCommand.Execute(null);
+                            success = device.Device.SetNoneEffect();
                             break;
                     }
+                    Logger.Info($"Set RGB effect '{effect}' for {device.Name}: {(success ? "success" : "failed")}");
                 });
             }
         }
@@ -244,7 +259,7 @@ public class TrayIconService
         }
     }
     
-    private void SetDPI(int dpi)
+    private void SetDPI(int dpi, DeviceModel device)
     {
         try
         {
@@ -252,8 +267,20 @@ public class TrayIconService
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    vm.DpiValue = dpi;
-                    vm.SetDPICommand.Execute(null);
+                    bool success = device.Device.SetDPI(dpi);
+                    if (success)
+                    {
+                        Logger.Info($"Set DPI to {dpi} for {device.Name}");
+                        // Update the ViewModel if this is the selected device
+                        if (vm.SelectedDevice?.Device == device.Device)
+                        {
+                            vm.DpiValue = dpi;
+                        }
+                    }
+                    else
+                    {
+                        Logger.Warn($"Failed to set DPI to {dpi} for {device.Name}");
+                    }
                 });
             }
         }
@@ -263,7 +290,7 @@ public class TrayIconService
         }
     }
     
-    private void SetPollRate(int rate)
+    private void SetPollRate(int rate, DeviceModel device)
     {
         try
         {
@@ -271,15 +298,28 @@ public class TrayIconService
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    // Find the index of this rate in the options
-                    for (int i = 0; i < vm.PollRateOptions.Count; i++)
+                    bool success = device.Device.SetPollRate(rate);
+                    if (success)
                     {
-                        if (vm.PollRateOptions[i] == rate)
+                        Logger.Info($"Set polling rate to {rate}Hz for {device.Name}");
+                        // Update the ViewModel if this is the selected device
+                        if (vm.SelectedDevice?.Device == device.Device)
                         {
-                            vm.SelectedPollRateIndex = i;
-                            vm.SetPollRateCommand.Execute(null);
-                            break;
+                            vm.PollRate = rate;
+                            // Update the selected index
+                            for (int i = 0; i < vm.PollRateOptions.Count; i++)
+                            {
+                                if (vm.PollRateOptions[i] == rate)
+                                {
+                                    vm.SelectedPollRateIndex = i;
+                                    break;
+                                }
+                            }
                         }
+                    }
+                    else
+                    {
+                        Logger.Warn($"Failed to set polling rate to {rate}Hz for {device.Name}");
                     }
                 });
             }
