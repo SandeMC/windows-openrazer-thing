@@ -187,6 +187,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isCharging;
     
+    private bool _isInitializing = true;
+
     [ObservableProperty]
     private int _windowsSensitivity = 10; // Default Windows sensitivity (1-20)
     
@@ -196,7 +198,8 @@ public partial class MainWindowViewModel : ViewModelBase
     partial void OnWindowsMouseAccelerationChanged(bool value)
     {
         // When the checkbox is toggled by user, automatically apply the setting
-        if (_mouseSettingsService != null)
+        // Don't apply during initialization
+        if (_mouseSettingsService != null && !_isInitializing)
         {
             SetMouseAccelerationCommand.Execute(null);
         }
@@ -225,18 +228,29 @@ public partial class MainWindowViewModel : ViewModelBase
     
     private void LoadWindowsMouseSettings()
     {
-        var sensitivity = _mouseSettingsService.GetMouseSensitivity();
-        if (sensitivity.HasValue)
-        {
-            WindowsSensitivity = sensitivity.Value;
-            Logger.Info($"Loaded Windows mouse sensitivity: {sensitivity.Value}");
-        }
+        // Temporarily disable auto-apply during reload to prevent loops
+        _isInitializing = true;
         
-        var acceleration = _mouseSettingsService.GetMouseAcceleration();
-        if (acceleration.HasValue)
+        try
         {
-            WindowsMouseAcceleration = acceleration.Value;
-            Logger.Info($"Loaded Windows mouse acceleration: {acceleration.Value}");
+            var sensitivity = _mouseSettingsService.GetMouseSensitivity();
+            if (sensitivity.HasValue)
+            {
+                WindowsSensitivity = sensitivity.Value;
+                Logger.Info($"Loaded Windows mouse sensitivity: {sensitivity.Value}");
+            }
+            
+            var acceleration = _mouseSettingsService.GetMouseAcceleration();
+            if (acceleration.HasValue)
+            {
+                WindowsMouseAcceleration = acceleration.Value;
+                Logger.Info($"Loaded Windows mouse acceleration: {acceleration.Value}");
+            }
+        }
+        finally
+        {
+            // Re-enable auto-apply after loading
+            _isInitializing = false;
         }
     }
 

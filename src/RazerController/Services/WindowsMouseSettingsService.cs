@@ -84,30 +84,25 @@ public class WindowsMouseSettingsService
                 return false;
             }
             
-            IntPtr ptr = Marshal.AllocHGlobal(sizeof(int));
-            try
+            // SPI_SETMOUSESPEED expects the value in uiParam, not pvParam
+            // Set pvParam to IntPtr.Zero and pass the value in uiParam
+            bool success = SystemParametersInfo(
+                SPI_SETMOUSESPEED, 
+                sensitivity,  // Pass value here, not 0
+                IntPtr.Zero,  // Set pointer to zero
+                SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+            
+            int lastError = Marshal.GetLastWin32Error();
+            
+            if (success)
             {
-                Marshal.WriteInt32(ptr, sensitivity);
-                bool success = SystemParametersInfo(
-                    SPI_SETMOUSESPEED, 
-                    0, 
-                    ptr, 
-                    SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-                
-                if (success)
-                {
-                    Logger.Info($"Set Windows mouse speed to: {sensitivity}");
-                    return true;
-                }
-                else
-                {
-                    Logger.Warn($"Failed to set mouse speed. Error: {Marshal.GetLastWin32Error()}");
-                    return false;
-                }
+                Logger.Info($"Set Windows mouse speed to: {sensitivity}");
+                return true;
             }
-            finally
+            else
             {
-                Marshal.FreeHGlobal(ptr);
+                Logger.Warn($"Failed to set mouse speed. Error code: {lastError} (0x{lastError:X})");
+                return false;
             }
         }
         catch (Exception ex)
@@ -193,6 +188,8 @@ public class WindowsMouseSettingsService
                 mouseParams, 
                 SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
             
+            int lastError = Marshal.GetLastWin32Error();
+            
             if (success)
             {
                 Logger.Info($"Mouse acceleration {(enabled ? "enabled" : "disabled")}");
@@ -200,7 +197,7 @@ public class WindowsMouseSettingsService
             }
             else
             {
-                Logger.Warn($"Failed to set mouse acceleration. Error: {Marshal.GetLastWin32Error()}");
+                Logger.Warn($"Failed to set mouse acceleration. Error code: {lastError} (0x{lastError:X})");
                 return false;
             }
         }

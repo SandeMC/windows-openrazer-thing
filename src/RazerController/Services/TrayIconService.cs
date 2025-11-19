@@ -65,6 +65,9 @@ public class TrayIconService
             _trayIcon.Menu = menu;
             _trayIcon.Clicked += (s, e) => ShowMainWindow();
             
+            // Build the initial menu
+            BuildTrayMenu();
+            
             // When right-clicking to open menu, rebuild it dynamically based on current device
             _trayIcon.Menu.Opening += (s, e) => 
             {

@@ -2,12 +2,14 @@
 using NLog;
 using System;
 using System.IO;
+using System.Threading;
 
 namespace RazerController;
 
 sealed class Program
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+    private static Mutex? _instanceMutex;
 
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
@@ -15,6 +17,20 @@ sealed class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Implement single instance - only one app can run at a time
+        const string mutexName = "WindowsOpenrazerThing_SingleInstance_Mutex";
+        bool createdNew;
+        
+        _instanceMutex = new Mutex(true, mutexName, out createdNew);
+        
+        if (!createdNew)
+        {
+            Logger.Info("Another instance is already running. Attempting to bring it to foreground.");
+            // Another instance is running, try to bring it to foreground
+            BringExistingInstanceToForeground();
+            return;
+        }
+        
         try
         {
             // Detect if running as a single file (PublishSingleFile)
@@ -60,12 +76,16 @@ sealed class Program
             if (File.Exists(debugFilePath))
             {
                 // Enable DEBUG level logging
-                foreach (var rule in LogManager.Configuration.LoggingRules)
+                var config = LogManager.Configuration;
+                if (config != null)
                 {
-                    rule.EnableLoggingForLevel(LogLevel.Debug);
-                    rule.EnableLoggingForLevel(LogLevel.Trace);
+                    foreach (var rule in config.LoggingRules)
+                    {
+                        rule.EnableLoggingForLevel(LogLevel.Debug);
+                        rule.EnableLoggingForLevel(LogLevel.Trace);
+                    }
+                    LogManager.Configuration = config; // Reapply configuration
                 }
-                LogManager.ReconfigExistingLoggers();
                 Logger.Info("DEBUG file detected - Debug logging enabled");
             }
             
@@ -103,9 +123,45 @@ sealed class Program
         }
         finally
         {
+            _instanceMutex?.ReleaseMutex();
+            _instanceMutex?.Dispose();
             LogManager.Shutdown();
         }
     }
+
+    private static void BringExistingInstanceToForeground()
+    {
+        try
+        {
+            // Use Windows API to find and activate the existing window
+            var process = System.Diagnostics.Process.GetCurrentProcess();
+            var processes = System.Diagnostics.Process.GetProcessesByName(process.ProcessName);
+            
+            foreach (var proc in processes)
+            {
+                if (proc.Id != process.Id && proc.MainWindowHandle != IntPtr.Zero)
+                {
+                    // Found another instance with a window
+                    ShowWindow(proc.MainWindowHandle, SW_RESTORE);
+                    SetForegroundWindow(proc.MainWindowHandle);
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Error bringing existing instance to foreground");
+        }
+    }
+
+    // Windows API imports for bringing window to foreground
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+    
+    private const int SW_RESTORE = 9;
 
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()
