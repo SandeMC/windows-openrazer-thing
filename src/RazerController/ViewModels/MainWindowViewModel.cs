@@ -130,7 +130,7 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [ObservableProperty]
-    private string _statusMessage = "Click 'Initialize' to detect Razer devices";
+    private string _statusMessage = "Click 'Refresh Devices' to detect Razer devices";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PreviewColor))]
@@ -253,7 +253,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             // Small delay to ensure UI is ready
             Task.Delay(500).Wait();
-            Avalonia.Threading.Dispatcher.UIThread.Post(() => Initialize());
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => Refresh());
         });
     }
     
@@ -285,16 +285,30 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+
+
     [RelayCommand]
-    private void Initialize()
+    private void Refresh()
     {
         try
         {
-            Logger.Info("Initialize command invoked - attempting to detect Razer devices");
-            bool success = _deviceManager.Initialize();
+            Logger.Info("Refresh command invoked - detecting/refreshing Razer devices");
+            
+            // Initialize if not already initialized, otherwise refresh
+            bool success;
+            if (IsInitialized)
+            {
+                _deviceManager.Refresh();
+                success = true; // Refresh always succeeds if it doesn't throw
+            }
+            else
+            {
+                success = _deviceManager.Initialize();
+            }
+            
             if (success)
             {
-                Logger.Info("Device manager initialized successfully");
+                Logger.Info("Device manager refreshed successfully");
                 Devices.Clear();
                 foreach (var device in _deviceManager.Devices)
                 {
@@ -306,6 +320,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 StatusMessage = $"Found {Devices.Count} Razer device(s)";
                 Logger.Info($"Total devices found: {Devices.Count}");
                 
+                // Auto-select first device
                 if (Devices.Count > 0)
                 {
                     // Prefer selecting a mouse first, otherwise select the first device
@@ -316,33 +331,14 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             else
             {
-                Logger.Warn("Device manager initialization failed");
-                StatusMessage = "Failed to initialize. Make sure OpenRazer DLL is present.";
+                Logger.Warn("Device refresh/initialization failed");
+                StatusMessage = "Failed to detect devices. Make sure OpenRazer DLL is present.";
             }
         }
         catch (Exception ex)
         {
-            Logger.Error(ex, "Error during device initialization");
+            Logger.Error(ex, "Error during device refresh");
             StatusMessage = $"Error: {ex.Message}";
-        }
-    }
-
-    [RelayCommand]
-    private void Refresh()
-    {
-        _deviceManager.Refresh();
-        Devices.Clear();
-        foreach (var device in _deviceManager.Devices)
-        {
-            Devices.Add(new DeviceModel(device));
-        }
-        StatusMessage = $"Refreshed. Found {Devices.Count} device(s)";
-        
-        // Auto-select first device
-        if (Devices.Count > 0)
-        {
-            SelectedDevice = Devices[0];
-            Logger.Info($"Auto-selected first device: {Devices[0].Name}");
         }
     }
     
