@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -13,6 +15,8 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     private readonly RazerDeviceManager _deviceManager;
+    private CancellationTokenSource? _pollingCancellation;
+    private Task? _pollingTask;
 
     [ObservableProperty]
     private ObservableCollection<DeviceModel> _devices = new();
@@ -25,91 +29,103 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnSelectedDeviceChanged(DeviceModel? value)
     {
+        // Stop any existing polling
+        StopDevicePolling();
+        
         if (value?.Device != null)
         {
-            // Load supported poll rates dynamically
-            if (value.SupportsPollRate)
-            {
-                var supportedRates = value.Device.GetSupportedPollRates();
-                if (supportedRates != null && supportedRates.Count > 0)
-                {
-                    PollRateOptions.Clear();
-                    foreach (var rate in supportedRates)
-                    {
-                        PollRateOptions.Add(rate);
-                    }
-                    Logger.Info($"Loaded supported poll rates: {string.Join(", ", supportedRates)}");
-                }
-            }
+            // Load all device values initially
+            LoadDeviceValues(value);
             
-            // Load current DPI value if supported
-            if (value.SupportsDPI)
+            // Start polling for updates
+            StartDevicePolling();
+        }
+    }
+
+    private void LoadDeviceValues(DeviceModel device)
+    {
+        // Load supported poll rates dynamically
+        if (device.SupportsPollRate)
+        {
+            var supportedRates = device.Device.GetSupportedPollRates();
+            if (supportedRates != null && supportedRates.Count > 0)
             {
-                var currentDpi = value.Device.GetDPI();
-                if (currentDpi.HasValue)
+                PollRateOptions.Clear();
+                foreach (var rate in supportedRates)
                 {
-                    DpiValue = currentDpi.Value;
-                    Logger.Info($"Loaded current DPI: {currentDpi.Value}");
+                    PollRateOptions.Add(rate);
                 }
-                else
-                {
-                    Logger.Warn("Failed to read current DPI from device");
-                }
+                Logger.Debug($"Loaded supported poll rates: {string.Join(", ", supportedRates)}");
             }
-            
-            // Load current poll rate if supported
-            if (value.SupportsPollRate)
+        }
+        
+        // Load current DPI value if supported
+        if (device.SupportsDPI)
+        {
+            var currentDpi = device.Device.GetDPI();
+            if (currentDpi.HasValue)
             {
-                var currentPollRate = value.Device.GetPollRate();
-                if (currentPollRate.HasValue)
-                {
-                    PollRate = currentPollRate.Value;
-                    // Set the selected index to match the poll rate
-                    for (int i = 0; i < PollRateOptions.Count; i++)
-                    {
-                        if (PollRateOptions[i] == currentPollRate.Value)
-                        {
-                            SelectedPollRateIndex = i;
-                            break;
-                        }
-                    }
-                    Logger.Info($"Loaded current poll rate: {currentPollRate.Value}Hz");
-                }
-                else
-                {
-                    Logger.Warn("Failed to read current poll rate from device");
-                }
-            }
-            
-            // Load current brightness if supported
-            if (value.SupportsBrightness)
-            {
-                var currentBrightness = value.Device.GetBrightness();
-                if (currentBrightness.HasValue)
-                {
-                    Brightness = currentBrightness.Value;
-                    Logger.Info($"Loaded current brightness: {currentBrightness.Value}");
-                }
-                else
-                {
-                    Logger.Warn("Failed to read current brightness from device");
-                }
-            }
-            
-            // Load battery info if supported
-            if (value.SupportsBattery)
-            {
-                BatteryLevel = value.Device.GetBatteryLevel();
-                BatteryStatus = value.Device.GetBatteryStatus();
-                IsCharging = value.Device.GetIsCharging();
-                Logger.Info($"Battery: {BatteryLevel}%, Status: {BatteryStatus}, Charging: {IsCharging}");
+                DpiValue = currentDpi.Value;
+                Logger.Debug($"Loaded current DPI: {currentDpi.Value}");
             }
             else
             {
-                BatteryLevel = null;
-                BatteryStatus = null;
-                IsCharging = false;
+                Logger.Warn("Failed to read current DPI from device");
             }
+        }
+        
+        // Load current poll rate if supported
+        if (device.SupportsPollRate)
+        {
+            var currentPollRate = device.Device.GetPollRate();
+            if (currentPollRate.HasValue)
+            {
+                PollRate = currentPollRate.Value;
+                // Set the selected index to match the poll rate
+                for (int i = 0; i < PollRateOptions.Count; i++)
+                {
+                    if (PollRateOptions[i] == currentPollRate.Value)
+                    {
+                        SelectedPollRateIndex = i;
+                        break;
+                    }
+                }
+                Logger.Debug($"Loaded current poll rate: {currentPollRate.Value}Hz");
+            }
+            else
+            {
+                Logger.Warn("Failed to read current poll rate from device");
+            }
+        }
+        
+        // Load current brightness if supported
+        if (device.SupportsBrightness)
+        {
+            var currentBrightness = device.Device.GetBrightness();
+            if (currentBrightness.HasValue)
+            {
+                Brightness = currentBrightness.Value;
+                Logger.Debug($"Loaded current brightness: {currentBrightness.Value}");
+            }
+            else
+            {
+                Logger.Warn("Failed to read current brightness from device");
+            }
+        }
+        
+        // Load battery info if supported
+        if (device.SupportsBattery)
+        {
+            BatteryLevel = device.Device.GetBatteryLevel();
+            BatteryStatus = device.Device.GetBatteryStatus();
+            IsCharging = device.Device.GetIsCharging();
+            Logger.Debug($"Battery: {BatteryLevel}%, Status: {BatteryStatus}, Charging: {IsCharging}");
+        }
+        else
+        {
+            BatteryLevel = null;
+            BatteryStatus = null;
+            IsCharging = false;
         }
     }
 
@@ -449,6 +465,124 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Logger.Error(ex, "Error setting poll rate");
             StatusMessage = $"Error setting poll rate: {ex.Message}";
+        }
+    }
+
+    private void StartDevicePolling()
+    {
+        _pollingCancellation = new CancellationTokenSource();
+        _pollingTask = Task.Run(async () =>
+        {
+            try
+            {
+                while (!_pollingCancellation.Token.IsCancellationRequested)
+                {
+                    await Task.Delay(3000, _pollingCancellation.Token); // Poll every 3 seconds
+                    
+                    if (SelectedDevice?.Device != null)
+                    {
+                        // Update device values on UI thread
+                        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                        {
+                            try
+                            {
+                                RefreshDeviceValues();
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Debug(ex, "Error refreshing device values during polling");
+                            }
+                        });
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                Logger.Debug("Device polling cancelled");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in device polling loop");
+            }
+        }, _pollingCancellation.Token);
+    }
+
+    private void StopDevicePolling()
+    {
+        _pollingCancellation?.Cancel();
+        _pollingTask?.Wait(TimeSpan.FromSeconds(1));
+        _pollingCancellation?.Dispose();
+        _pollingCancellation = null;
+        _pollingTask = null;
+    }
+
+    public void RefreshDeviceValues()
+    {
+        if (SelectedDevice?.Device == null) return;
+
+        try
+        {
+            // Refresh DPI if supported
+            if (SelectedDevice.SupportsDPI)
+            {
+                var currentDpi = SelectedDevice.Device.GetDPI();
+                if (currentDpi.HasValue && currentDpi.Value != DpiValue)
+                {
+                    DpiValue = currentDpi.Value;
+                    Logger.Debug($"DPI changed to: {currentDpi.Value}");
+                }
+            }
+
+            // Refresh poll rate if supported
+            if (SelectedDevice.SupportsPollRate)
+            {
+                var currentPollRate = SelectedDevice.Device.GetPollRate();
+                if (currentPollRate.HasValue && currentPollRate.Value != PollRate)
+                {
+                    PollRate = currentPollRate.Value;
+                    // Update selected index
+                    for (int i = 0; i < PollRateOptions.Count; i++)
+                    {
+                        if (PollRateOptions[i] == currentPollRate.Value)
+                        {
+                            SelectedPollRateIndex = i;
+                            break;
+                        }
+                    }
+                    Logger.Debug($"Poll rate changed to: {currentPollRate.Value}Hz");
+                }
+            }
+
+            // Refresh brightness if supported
+            if (SelectedDevice.SupportsBrightness)
+            {
+                var currentBrightness = SelectedDevice.Device.GetBrightness();
+                if (currentBrightness.HasValue && currentBrightness.Value != Brightness)
+                {
+                    Brightness = currentBrightness.Value;
+                    Logger.Debug($"Brightness changed to: {currentBrightness.Value}");
+                }
+            }
+
+            // Refresh battery info if supported
+            if (SelectedDevice.SupportsBattery)
+            {
+                var batteryLevel = SelectedDevice.Device.GetBatteryLevel();
+                var batteryStatus = SelectedDevice.Device.GetBatteryStatus();
+                var isCharging = SelectedDevice.Device.GetIsCharging();
+
+                if (batteryLevel != BatteryLevel || batteryStatus != BatteryStatus || isCharging != IsCharging)
+                {
+                    BatteryLevel = batteryLevel;
+                    BatteryStatus = batteryStatus;
+                    IsCharging = isCharging;
+                    Logger.Debug($"Battery updated: {BatteryLevel}%, {BatteryStatus}, Charging: {IsCharging}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "Error refreshing device values");
         }
     }
 }

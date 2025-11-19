@@ -466,6 +466,8 @@ public class RazerDevice
                 }
                 if (rates.Count > 0)
                 {
+                    // Ensure rates don't exceed 8000Hz
+                    rates = rates.Where(r => r <= 8000).OrderBy(r => r).ToList();
                     Logger.Debug($"Detected supported poll rates: {string.Join(", ", rates)}");
                     return rates;
                 }
@@ -476,8 +478,8 @@ public class RazerDevice
             Logger.Debug(ex, "Could not read supported_poll_rates attribute");
         }
 
-        // If supported_poll_rates is not available, return full range
-        Logger.Debug("supported_poll_rates attribute not available, returning full range");
+        // If supported_poll_rates is not available, return full range up to 8000Hz
+        Logger.Debug("supported_poll_rates attribute not available, returning full range up to 8000Hz");
         return new List<int> { 125, 250, 500, 1000, 2000, 4000, 8000 };
     }
 
