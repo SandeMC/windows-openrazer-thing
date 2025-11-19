@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using NLog;
+using PInvoke;
 
 namespace RazerController.Services;
 
@@ -11,28 +12,6 @@ public class WindowsMouseSettingsService
 {
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
     
-    // Windows API constants
-    private const int SPI_GETMOUSE = 0x0003;
-    private const int SPI_SETMOUSE = 0x0004;
-    private const int SPI_GETMOUSESPEED = 0x0070;
-    private const int SPI_SETMOUSESPEED = 0x0071;
-    private const int SPIF_UPDATEINIFILE = 0x01;
-    private const int SPIF_SENDCHANGE = 0x02;
-    
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SystemParametersInfo(
-        int uiAction,
-        int uiParam,
-        IntPtr pvParam,
-        int fWinIni);
-    
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool SystemParametersInfo(
-        int uiAction,
-        int uiParam,
-        int[] pvParam,
-        int fWinIni);
-    
     /// <summary>
     /// Gets the current mouse sensitivity (pointer speed) from Windows settings
     /// </summary>
@@ -41,25 +20,26 @@ public class WindowsMouseSettingsService
     {
         try
         {
-            IntPtr ptr = Marshal.AllocHGlobal(sizeof(int));
-            try
+            int speed = 0;
+            unsafe
             {
-                bool success = SystemParametersInfo(SPI_GETMOUSESPEED, 0, ptr, 0);
+                bool success = User32.SystemParametersInfo(
+                    User32.SystemParametersInfoAction.SPI_GETMOUSESPEED,
+                    0,
+                    &speed,
+                    User32.SystemParametersInfoFlags.None);
+                    
                 if (success)
                 {
-                    int speed = Marshal.ReadInt32(ptr);
                     Logger.Debug($"Current Windows mouse speed: {speed}");
                     return speed;
                 }
                 else
                 {
-                    Logger.Warn($"Failed to get mouse speed. Error: {Marshal.GetLastWin32Error()}");
+                    int error = Marshal.GetLastWin32Error();
+                    Logger.Warn($"Failed to get mouse speed. Error: {error}");
                     return null;
                 }
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(ptr);
             }
         }
         catch (Exception ex)
@@ -84,31 +64,32 @@ public class WindowsMouseSettingsService
                 return false;
             }
             
-            // SPI_SETMOUSESPEED uses pvParam as pointer to UINT array with one element
-            int[] mouseSpeed = new int[1] { sensitivity };
-            bool success = SystemParametersInfo(
-                SPI_SETMOUSESPEED, 
-                0,
-                mouseSpeed,
-                SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-            
-            int lastError = Marshal.GetLastWin32Error();
-            
-            if (success)
+            unsafe
             {
-                Logger.Info($"Set Windows mouse speed to: {sensitivity}");
-                // Verify the setting was applied
-                var verifySpeed = GetMouseSensitivity();
-                if (verifySpeed.HasValue && verifySpeed.Value != sensitivity)
+                bool success = User32.SystemParametersInfo(
+                    User32.SystemParametersInfoAction.SPI_SETMOUSESPEED,
+                    (uint)sensitivity,
+                    null,
+                    User32.SystemParametersInfoFlags.SPIF_UPDATEINIFILE | User32.SystemParametersInfoFlags.SPIF_SENDCHANGE);
+                
+                int lastError = Marshal.GetLastWin32Error();
+                
+                if (success)
                 {
-                    Logger.Warn($"Verification failed: requested {sensitivity}, got {verifySpeed.Value}");
+                    Logger.Info($"Set Windows mouse speed to: {sensitivity}");
+                    // Verify the setting was applied
+                    var verifySpeed = GetMouseSensitivity();
+                    if (verifySpeed.HasValue && verifySpeed.Value != sensitivity)
+                    {
+                        Logger.Warn($"Verification failed: requested {sensitivity}, got {verifySpeed.Value}");
+                    }
+                    return true;
                 }
-                return true;
-            }
-            else
-            {
-                Logger.Warn($"Failed to set mouse speed. Error code: {lastError} (0x{lastError:X})");
-                return false;
+                else
+                {
+                    Logger.Warn($"Failed to set mouse speed. Error code: {lastError} (0x{lastError:X})");
+                    return false;
+                }
             }
         }
         catch (Exception ex)
@@ -127,20 +108,31 @@ public class WindowsMouseSettingsService
         try
         {
             int[] mouseParams = new int[3];
-            bool success = SystemParametersInfo(SPI_GETMOUSE, 0, mouseParams, 0);
-            
-            if (success)
+            unsafe
             {
-                // mouseParams[2] determines if acceleration is enabled
-                // 0 = disabled, 1 = enabled
-                bool accelerationEnabled = mouseParams[2] != 0;
-                Logger.Debug($"Mouse acceleration: {(accelerationEnabled ? "enabled" : "disabled")} (params: {mouseParams[0]}, {mouseParams[1]}, {mouseParams[2]})");
-                return accelerationEnabled;
-            }
-            else
-            {
-                Logger.Warn($"Failed to get mouse acceleration. Error: {Marshal.GetLastWin32Error()}");
-                return null;
+                fixed (int* ptr = mouseParams)
+                {
+                    bool success = User32.SystemParametersInfo(
+                        User32.SystemParametersInfoAction.SPI_GETMOUSE,
+                        0,
+                        ptr,
+                        User32.SystemParametersInfoFlags.None);
+                    
+                    if (success)
+                    {
+                        // mouseParams[2] determines if acceleration is enabled
+                        // 0 = disabled, 1 = enabled
+                        bool accelerationEnabled = mouseParams[2] != 0;
+                        Logger.Debug($"Mouse acceleration: {(accelerationEnabled ? "enabled" : "disabled")} (params: {mouseParams[0]}, {mouseParams[1]}, {mouseParams[2]})");
+                        return accelerationEnabled;
+                    }
+                    else
+                    {
+                        int error = Marshal.GetLastWin32Error();
+                        Logger.Warn($"Failed to get mouse acceleration. Error: {error}");
+                        return null;
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -161,7 +153,19 @@ public class WindowsMouseSettingsService
         {
             // First get the current settings
             int[] mouseParams = new int[3];
-            bool success = SystemParametersInfo(SPI_GETMOUSE, 0, mouseParams, 0);
+            bool success;
+            
+            unsafe
+            {
+                fixed (int* ptr = mouseParams)
+                {
+                    success = User32.SystemParametersInfo(
+                        User32.SystemParametersInfoAction.SPI_GETMOUSE,
+                        0,
+                        ptr,
+                        User32.SystemParametersInfoFlags.None);
+                }
+            }
             
             if (!success)
             {
@@ -188,11 +192,17 @@ public class WindowsMouseSettingsService
                 mouseParams[2] = 0;
             }
             
-            success = SystemParametersInfo(
-                SPI_SETMOUSE, 
-                0, 
-                mouseParams, 
-                SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+            unsafe
+            {
+                fixed (int* ptr = mouseParams)
+                {
+                    success = User32.SystemParametersInfo(
+                        User32.SystemParametersInfoAction.SPI_SETMOUSE,
+                        0,
+                        ptr,
+                        User32.SystemParametersInfoFlags.SPIF_UPDATEINIFILE | User32.SystemParametersInfoFlags.SPIF_SENDCHANGE);
+                }
+            }
             
             int lastError = Marshal.GetLastWin32Error();
             
