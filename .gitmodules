@@ -1,0 +1,3 @@
+[submodule "native"]
+	path = native
+	url = https://github.com/SandeMC/openrazer-win32.git

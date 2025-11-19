@@ -1,12 +1,9 @@
 using System;
 using System.IO;
-using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Platform;
 using NLog;
-using RazerController.Views;
 using RazerController.ViewModels;
 
 namespace RazerController.Services;
@@ -43,7 +40,7 @@ public class TrayIconService
             {
                 // Try to load icon from file in Assets folder
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                string iconPath = Path.Combine(appDir, "Assets", "avalonia-logo.ico");
+                string iconPath = Path.Combine(appDir, "Assets", "logo.ico");
                 
                 if (File.Exists(iconPath))
                 {
@@ -58,34 +55,25 @@ public class TrayIconService
             _trayIcon = new TrayIcon
             {
                 Icon = icon,
-                ToolTipText = "Windows OpenRazer Thing"
+                ToolTipText = "WindowsOpenrazerThing"
             };
 
             var menu = new NativeMenu();
-
+            
+            // Show Window item
             var showItem = new NativeMenuItem("Show Window");
-            showItem.Click += (s, e) => ShowMainWindow();
+            showItem.Click += (s, e) => ShowMainWindowAndSelectFirstDevice();
             menu.Items.Add(showItem);
             
-            var refreshItem = new NativeMenuItem("Refresh Devices");
-            refreshItem.Click += (s, e) => RefreshDevices();
-            menu.Items.Add(refreshItem);
-
             menu.Items.Add(new NativeMenuItemSeparator());
-
+            
+            // Exit item
             var exitItem = new NativeMenuItem("Exit");
             exitItem.Click += (s, e) => _desktop.Shutdown();
             menu.Items.Add(exitItem);
-
-            _trayIcon.Menu = menu;
-            _trayIcon.Clicked += (s, e) => ShowMainWindow();
             
-            // When right-clicking to open menu, poll device values once and update tooltip
-            _trayIcon.Menu.Opening += (s, e) => 
-            {
-                PollDeviceValuesOnce();
-                UpdateTooltip();
-            };
+            _trayIcon.Menu = menu;
+            _trayIcon.Clicked += (s, e) => ShowMainWindowAndSelectFirstDevice();
 
             _trayIcon.IsVisible = true;
             Logger.Info("Tray icon initialized");
@@ -96,82 +84,25 @@ public class TrayIconService
         }
     }
 
-    private void PollDeviceValuesOnce()
-    {
-        try
-        {
-            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm)
-            {
-                // Poll device values silently (no log noise)
-                vm.RefreshDeviceValues();
-            }
-        }
-        catch
-        {
-            // Silently fail - no log noise
-        }
-    }
 
-    private void RefreshDevices()
-    {
-        try
-        {
-            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm)
-            {
-                Avalonia.Threading.Dispatcher.UIThread.Post(() => vm.RefreshCommand.Execute(null));
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warn(ex, "Error refreshing devices from tray");
-        }
-    }
 
-    private void UpdateTooltip()
-    {
-        try
-        {
-            if (_trayIcon == null) return;
-            
-            if (_desktop?.MainWindow?.DataContext is MainWindowViewModel vm && vm.SelectedDevice != null)
-            {
-                string deviceInfo = $"Windows OpenRazer Thing\n{vm.SelectedDevice.Name}";
-                
-                if (vm.SelectedDevice.SupportsDPI && vm.DpiValue > 0)
-                {
-                    deviceInfo += $"\nDPI: {vm.DpiValue}";
-                }
-                
-                if (vm.SelectedDevice.SupportsPollRate && vm.PollRate > 0)
-                {
-                    deviceInfo += $"\nPoll Rate: {vm.PollRate}Hz";
-                }
-                
-                if (vm.SelectedDevice.SupportsBattery && vm.BatteryLevel.HasValue)
-                {
-                    deviceInfo += $"\nBattery: {vm.BatteryLevel}%{(vm.IsCharging ? " (Charging)" : "")}";
-                }
-                
-                _trayIcon.ToolTipText = deviceInfo;
-            }
-            else
-            {
-                _trayIcon.ToolTipText = "Windows OpenRazer Thing";
-            }
-        }
-        catch
-        {
-            // Silently fail
-        }
-    }
-
-    private void ShowMainWindow()
+    private void ShowMainWindowAndSelectFirstDevice()
     {
         if (_desktop?.MainWindow != null)
         {
             _desktop.MainWindow.Show();
             _desktop.MainWindow.WindowState = WindowState.Normal;
             _desktop.MainWindow.Activate();
+            
+            // Auto-select the first device
+            if (_desktop.MainWindow.DataContext is MainWindowViewModel vm && vm.Devices.Count > 0)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    vm.SelectedDevice = vm.Devices[0];
+                    Logger.Info($"Auto-selected first device: {vm.Devices[0].Name}");
+                });
+            }
         }
     }
 

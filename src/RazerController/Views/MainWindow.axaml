@@ -6,8 +6,8 @@
         mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
         x:Class="RazerController.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="Windows OpenRazer Thing"
+        Icon="/Assets/logo.ico"
+        Title="WindowsOpenrazerThing"
         Width="900" Height="650"
         MinWidth="700" MinHeight="500">
 
@@ -18,8 +18,7 @@
     <Grid RowDefinitions="Auto,*,Auto" Margin="10">
         <!-- Header -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
-            <Button Content="Initialize Devices" Command="{Binding InitializeCommand}" />
-            <Button Content="Refresh" Command="{Binding RefreshCommand}" IsEnabled="{Binding IsInitialized}" />
+            <Button Content="Refresh Devices" Command="{Binding RefreshCommand}" />
         </StackPanel>
 
         <!-- Main Content -->
@@ -46,6 +45,10 @@
             <!-- Device Controls -->
             <ScrollViewer Grid.Column="1">
                 <StackPanel IsEnabled="{Binding SelectedDevice, Converter={x:Static ObjectConverters.IsNotNull}}" Spacing="15">
+                    
+                    <!-- Refresh Button for Selected Device -->
+                    <Button Content="Refresh Device Values" Command="{Binding RefreshDeviceValuesCommand}" 
+                            HorizontalAlignment="Center" Padding="20,5"/>
                     
                     <!-- Device Info -->
                     <Border BorderBrush="Gray" BorderThickness="1" Padding="10">
@@ -91,13 +94,12 @@
                             <!-- DPI Control with Slider -->
                             <StackPanel Spacing="5">
                                 <TextBlock Text="DPI:" FontWeight="Bold"/>
-                                <Slider Minimum="100" Maximum="20000" 
+                                <Slider Minimum="100" Maximum="{Binding MaxDpi}" 
                                         Value="{Binding DpiValue}" 
                                         TickFrequency="100" 
-                                        IsSnapToTickEnabled="False"
-                                        TickPlacement="BottomRight"/>
+                                        IsSnapToTickEnabled="True"/>
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <NumericUpDown Grid.Column="0" Minimum="100" Maximum="20000" Increment="100"
+                                    <NumericUpDown Grid.Column="0" Minimum="100" Maximum="{Binding MaxDpi}" Increment="100"
                                                    Value="{Binding DpiValue}" FormatString="N0"/>
                                     <Button Grid.Column="1" Content="Set DPI" Command="{Binding SetDPICommand}" Margin="10,0,0,0"/>
                                 </Grid>
@@ -124,6 +126,32 @@
                                     </ComboBox>
                                     <Button Grid.Column="1" Content="Set Poll Rate" Command="{Binding SetPollRateCommand}" Margin="10,0,0,0"/>
                                 </Grid>
+                            </StackPanel>
+                            
+                            <!-- Windows Mouse Settings - moved into Mouse Settings section -->
+                            <TextBlock Text="Windows Settings" FontSize="14" FontWeight="Bold" Margin="0,10,0,0"/>
+                            
+                            <!-- Sensitivity Control -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Pointer Speed (Sensitivity):" FontWeight="Bold"/>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Slider Grid.Column="0" Minimum="1" Maximum="20" 
+                                            Value="{Binding WindowsSensitivity}" 
+                                            TickFrequency="1" 
+                                            IsSnapToTickEnabled="True"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding WindowsSensitivity}" Width="40" Margin="10,0"/>
+                                </Grid>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Grid.Column="0"/>
+                                    <Button Grid.Column="1" Content="Apply Sensitivity" Command="{Binding SetWindowsSensitivityCommand}"/>
+                                </Grid>
+                            </StackPanel>
+                            
+                            <!-- Mouse Acceleration Toggle -->
+                            <StackPanel Spacing="5">
+                                <TextBlock Text="Mouse Acceleration:" FontWeight="Bold"/>
+                                <CheckBox IsChecked="{Binding WindowsMouseAcceleration}" 
+                                          Content="Enable pointer precision (mouse acceleration)"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
