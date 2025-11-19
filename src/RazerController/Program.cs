@@ -85,11 +85,16 @@ sealed class Program
                         rule.EnableLoggingForLevel(LogLevel.Trace);
                     }
                     LogManager.Configuration = config; // Reapply configuration
+                    LogManager.ReconfigExistingLoggers(); // Force reconfiguration of all loggers
                 }
-                Logger.Info("DEBUG file detected - Debug logging enabled");
             }
             
             Logger.Info("===== WindowsOpenrazerThing Starting =====");
+            if (File.Exists(debugFilePath))
+            {
+                Logger.Info("DEBUG file detected - Debug logging enabled");
+                Logger.Debug("This is a debug log message to verify debug logging is working");
+            }
             Logger.Info($"Application Base Directory: {AppDomain.CurrentDomain.BaseDirectory}");
             Logger.Info($"Working Directory: {Environment.CurrentDirectory}");
             Logger.Info($"OS: {Environment.OSVersion}");

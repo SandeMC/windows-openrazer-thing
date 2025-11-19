@@ -84,12 +84,12 @@ public class WindowsMouseSettingsService
                 return false;
             }
             
-            // SPI_SETMOUSESPEED expects the value in uiParam, not pvParam
-            // Set pvParam to IntPtr.Zero and pass the value in uiParam
+            // SPI_SETMOUSESPEED uses pvParam as pointer to UINT array with one element
+            int[] mouseSpeed = new int[1] { sensitivity };
             bool success = SystemParametersInfo(
                 SPI_SETMOUSESPEED, 
-                sensitivity,  // Pass value here, not 0
-                IntPtr.Zero,  // Set pointer to zero
+                0,
+                mouseSpeed,
                 SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
             
             int lastError = Marshal.GetLastWin32Error();
@@ -97,6 +97,12 @@ public class WindowsMouseSettingsService
             if (success)
             {
                 Logger.Info($"Set Windows mouse speed to: {sensitivity}");
+                // Verify the setting was applied
+                var verifySpeed = GetMouseSensitivity();
+                if (verifySpeed.HasValue && verifySpeed.Value != sensitivity)
+                {
+                    Logger.Warn($"Verification failed: requested {sensitivity}, got {verifySpeed.Value}");
+                }
                 return true;
             }
             else

@@ -277,8 +277,10 @@ public partial class MainWindowViewModel : ViewModelBase
                 
                 if (Devices.Count > 0)
                 {
-                    SelectedDevice = Devices[0];
-                    Logger.Info($"Selected first device: {SelectedDevice.Name}");
+                    // Prefer selecting a mouse first, otherwise select the first device
+                    var firstMouse = Devices.FirstOrDefault(d => d.Device.DeviceType == RazerDeviceType.Mouse);
+                    SelectedDevice = firstMouse ?? Devices[0];
+                    Logger.Info($"Selected device: {SelectedDevice.Name} (Type: {SelectedDevice.DeviceType})");
                 }
             }
             else
