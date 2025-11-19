@@ -124,6 +124,9 @@ public partial class MainWindowViewModel : ViewModelBase
             BatteryStatus = null;
             IsCharging = false;
         }
+        
+        // Load Windows mouse settings
+        LoadWindowsMouseSettings();
     }
 
     [ObservableProperty]
@@ -779,8 +782,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
             }
             
-            // Refresh Windows mouse settings
-            LoadWindowsMouseSettings();
+
         }
         catch (Exception ex)
         {

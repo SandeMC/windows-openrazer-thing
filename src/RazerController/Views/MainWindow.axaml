@@ -98,8 +98,7 @@
                                 <Slider Minimum="100" Maximum="{Binding MaxDpi}" 
                                         Value="{Binding DpiValue}" 
                                         TickFrequency="100" 
-                                        IsSnapToTickEnabled="True"
-                                        TickPlacement="BottomRight"/>
+                                        IsSnapToTickEnabled="True"/>
                                 <Grid ColumnDefinitions="*,Auto">
                                     <NumericUpDown Grid.Column="0" Minimum="100" Maximum="{Binding MaxDpi}" Increment="100"
                                                    Value="{Binding DpiValue}" FormatString="N0"/>
