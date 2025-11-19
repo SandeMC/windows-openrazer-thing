@@ -67,6 +67,18 @@
                                 <TextBlock Text="Firmware:" FontWeight="Bold" Width="120"/>
                                 <TextBlock Text="{Binding SelectedDevice.FirmwareVersion}"/>
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding SelectedDevice.SupportsBattery}">
+                                <TextBlock Text="Battery:" FontWeight="Bold" Width="120"/>
+                                <TextBlock>
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0}% ({1})">
+                                            <Binding Path="BatteryLevel"/>
+                                            <Binding Path="BatteryStatus"/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                <TextBlock Text="[Charging]" IsVisible="{Binding IsCharging}" Foreground="Green" FontWeight="Bold"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
 
@@ -79,21 +91,24 @@
                             <!-- Color Selection -->
                             <StackPanel Spacing="5">
                                 <TextBlock Text="Color (RGB):" FontWeight="Bold"/>
-                                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="5">
+                                <Grid ColumnDefinitions="Auto,*,60,60" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="5">
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Red:" VerticalAlignment="Center"/>
                                     <Slider Grid.Row="0" Grid.Column="1" Minimum="0" Maximum="255" 
                                             Value="{Binding RedValue}" TickFrequency="1" IsSnapToTickEnabled="True"/>
                                     <TextBlock Grid.Row="0" Grid.Column="2" Text="{Binding RedValue}" Width="40"/>
+                                    <TextBox Grid.Row="0" Grid.Column="3" Text="{Binding RedValue}" Width="50"/>
 
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Green:" VerticalAlignment="Center"/>
                                     <Slider Grid.Row="1" Grid.Column="1" Minimum="0" Maximum="255" 
                                             Value="{Binding GreenValue}" TickFrequency="1" IsSnapToTickEnabled="True"/>
                                     <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding GreenValue}" Width="40"/>
+                                    <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding GreenValue}" Width="50"/>
 
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Blue:" VerticalAlignment="Center"/>
                                     <Slider Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="255" 
                                             Value="{Binding BlueValue}" TickFrequency="1" IsSnapToTickEnabled="True"/>
                                     <TextBlock Grid.Row="2" Grid.Column="2" Text="{Binding BlueValue}" Width="40"/>
+                                    <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding BlueValue}" Width="50"/>
                                 </Grid>
                                 
                                 <!-- Color Preview -->

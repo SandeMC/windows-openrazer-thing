@@ -1,19 +1,33 @@
-# Razer Controller for Windows
+# Windows OpenRazer Thing
 
-A modern Windows application for controlling Razer devices without Synapse, using the open-source OpenRazer driver. Built with C# .NET 9 and Avalonia UI.
+## DISCLAIMER
+
+**This is a 100% AI-generated proof of concept that may not work correctly.** All development and maintenance is done exclusively with AI assistance. This project demonstrates implementing the [openrazer-win32](https://github.com/tpoechtrager/openrazer-win32) API in C#.
+
+**Important Notes:**
+- Device driver code and database cutoff: May 23, 2025
+- Only tested with: Razer DeathAdder V3 and Razer DeathAdder Essential 2021
+- Goal: Replace Razer Synapse with an open-source implementation
+- For RGB functionality, use Windows 11 built-in RGB settings or [OpenRGB](https://openrgb.org)
+
+## About
+
+A Windows application for controlling Razer devices without Synapse, using the open-source OpenRazer Win32 driver port. Built with C# .NET 9 and Avalonia UI.
 
 ## Features
 
-- 🎮 **Device Support**: Keyboards, Mice, Accessories, and Headsets
-- 🌈 **RGB Lighting Control**: Static colors, spectrum effects, breathing effects
-- 🎯 **Mouse Settings**: DPI and polling rate configuration
-- 🖥️ **System Tray**: Minimize to tray for background operation
-- 💡 **Brightness Control**: Adjust lighting brightness
-- 🔌 **Plug & Play**: Automatic device detection
+- Device Support: Keyboards, Mice, Accessories, and Headsets
+- Mouse Settings: DPI and polling rate configuration (supports up to 8000Hz on compatible devices)
+- Basic Lighting Control: Static colors, spectrum effects, breathing effects
+- Brightness Control: Adjust lighting brightness
+- Battery Status: Display battery level and charging status for wireless devices
+- System Tray: Minimize to tray for background operation
+- Dynamic Updates: Automatically refreshes device values every few seconds
+- Plug and Play: Automatic device detection
 
 ## Screenshots
 
-*(Screenshots will be added after the application is built and running)*
+Screenshots will be added after the application is built and running.
 
 ## Requirements
 
@@ -76,11 +90,11 @@ dotnet publish src/RazerController/RazerController.csproj -c Release -r win-x64 
 
 ## Quick Start
 
-1. **Launch the Application**: Run `RazerController.exe`
-2. **Initialize Devices**: Click the "Initialize Devices" button
-3. **Select a Device**: Click on a device in the left panel
-4. **Control Your Device**:
-   - Use the RGB sliders to choose a color
+1. Launch the Application: Run `RazerController.exe`
+2. Initialize Devices: Click the "Initialize Devices" button
+3. Select a Device: Click on a device in the left panel
+4. Control Your Device:
+   - Use the RGB sliders or textboxes to choose a color
    - Click "Set Static Color" to apply it
    - Try other effects like Spectrum or Breath
    - For mice, adjust DPI and polling rate
@@ -89,23 +103,33 @@ dotnet publish src/RazerController/RazerController.csproj -c Release -r win-x64 
 
 ### RGB Lighting
 
-- **Static Color**: Choose RGB values and click "Set Static Color"
-- **Spectrum Effect**: Rainbow cycling effect
-- **Breath Effect**: Pulsing effect with your chosen color
-- **Turn Off**: Disable all lighting
-- **Brightness**: Adjust the overall brightness (0-255)
+Note: For advanced RGB control, use Windows 11 built-in RGB settings or [OpenRGB](https://openrgb.org). This application provides basic lighting control only.
+
+- Static Color: Choose RGB values (sliders or textboxes) and click "Set Static Color"
+- Spectrum Effect: Rainbow cycling effect
+- Breath Effect: Pulsing effect with your chosen color
+- Turn Off: Disable all lighting
+- Brightness: Adjust the overall brightness (0-255)
 
 ### Mouse Settings
 
-- **DPI**: Set your preferred sensitivity (100-20000)
-- **Polling Rate**: Choose from 125Hz, 250Hz, 500Hz, or 1000Hz
+- DPI: Set your preferred sensitivity (100-20000)
+- Polling Rate: Dynamically detected from device (supports 125Hz to 8000Hz)
+- Values are automatically loaded from device on selection
+- Device values refresh every 3 seconds while selected
+
+### Battery Status (Wireless Devices)
+
+- Displays battery percentage
+- Shows charging status
+- Updates automatically
 
 ### System Tray
 
 - The application minimizes to the system tray when closed
 - Right-click the tray icon for options:
-  - **Show**: Restore the main window
-  - **Exit**: Quit the application
+  - Show: Restore the main window
+  - Exit: Quit the application
 
 ## Supported Devices
 
