@@ -69,6 +69,20 @@ sealed class Program
                 // For folder structure: use logs subdirectory
                 logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
                 Directory.CreateDirectory(logDirectory);
+                
+                // Ensure NLog file target uses the correct path
+                var config = LogManager.Configuration;
+                if (config != null)
+                {
+                    var fileTarget = config.FindTargetByName<NLog.Targets.FileTarget>("logfile");
+                    if (fileTarget != null)
+                    {
+                        // Set the log file path using NLog's layout renderer syntax
+                        fileTarget.FileName = Path.Combine(logDirectory, "windows-openrazer-thing-${shortdate}.log");
+                        fileTarget.ArchiveFileName = Path.Combine(logDirectory, "archives", "windows-openrazer-thing-{#}.log");
+                    }
+                    LogManager.Configuration = config;
+                }
             }
             
             // Enable DEBUG level logging by default

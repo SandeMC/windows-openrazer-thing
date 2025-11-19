@@ -207,11 +207,11 @@
                             <!-- Brightness Control -->
                             <StackPanel Spacing="5" IsVisible="{Binding SelectedDevice.SupportsBrightness}">
                                 <TextBlock Text="Brightness:" FontWeight="Bold"/>
-                                <Slider Minimum="0" Maximum="255" 
-                                        Value="{Binding Brightness}" TickFrequency="1" IsSnapToTickEnabled="True"/>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <TextBox Grid.Column="0" Text="{Binding Brightness}" Width="50"/>
-                                    <Button Grid.Column="1" Content="Apply" Command="{Binding SetBrightnessCommand}" Margin="10,0,0,0"/>
+                                <Grid ColumnDefinitions="*,60,Auto">
+                                    <Slider Grid.Column="0" Minimum="0" Maximum="255" 
+                                            Value="{Binding Brightness}" TickFrequency="1" IsSnapToTickEnabled="True"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Brightness}" Width="50" Margin="10,0"/>
+                                    <Button Grid.Column="2" Content="Apply" Command="{Binding SetBrightnessCommand}"/>
                                 </Grid>
                             </StackPanel>
                         </StackPanel>
