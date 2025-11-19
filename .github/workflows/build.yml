@@ -152,7 +152,6 @@ jobs:
           -p:PublishSingleFile=true `
           -p:IncludeAllContentForSelfExtract=true `
           -p:DebugType=embedded `
-          -p:EnableCompressionInSingleFile=true `
           -o publish-single-framework-dependent
       shell: pwsh
     
