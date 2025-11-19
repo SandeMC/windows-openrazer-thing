@@ -11,7 +11,6 @@ public partial class ColorPickerDialog : Window
     private Slider? _greenSlider;
     private Slider? _blueSlider;
     private Border? _colorPreview;
-    private bool _eventHandlersSubscribed;
     
     public byte RedValue { get; set; }
     public byte GreenValue { get; set; }
@@ -34,28 +33,12 @@ public partial class ColorPickerDialog : Window
             if (_greenSlider != null) _greenSlider.Value = GreenValue;
             if (_blueSlider != null) _blueSlider.Value = BlueValue;
             
-            // Subscribe to value changes only once
-            if (!_eventHandlersSubscribed)
-            {
-                if (_redSlider != null) _redSlider.PropertyChanged += Slider_PropertyChanged;
-                if (_greenSlider != null) _greenSlider.PropertyChanged += Slider_PropertyChanged;
-                if (_blueSlider != null) _blueSlider.PropertyChanged += Slider_PropertyChanged;
-                _eventHandlersSubscribed = true;
-            }
+            // Subscribe to value changes
+            if (_redSlider != null) _redSlider.PropertyChanged += Slider_PropertyChanged;
+            if (_greenSlider != null) _greenSlider.PropertyChanged += Slider_PropertyChanged;
+            if (_blueSlider != null) _blueSlider.PropertyChanged += Slider_PropertyChanged;
             
             UpdateColorPreview();
-        };
-        
-        // Clean up event handlers
-        this.Closed += (s, e) =>
-        {
-            if (_eventHandlersSubscribed)
-            {
-                if (_redSlider != null) _redSlider.PropertyChanged -= Slider_PropertyChanged;
-                if (_greenSlider != null) _greenSlider.PropertyChanged -= Slider_PropertyChanged;
-                if (_blueSlider != null) _blueSlider.PropertyChanged -= Slider_PropertyChanged;
-                _eventHandlersSubscribed = false;
-            }
         };
     }
     
