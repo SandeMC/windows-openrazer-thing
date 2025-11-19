@@ -216,7 +216,31 @@ public class RazerDevice
 
     public bool SetBrightness(byte brightness)
     {
-        return WriteAttribute("matrix_brightness", brightness.ToString());
+        // Try different brightness attributes based on what the device supports
+        bool success = false;
+        
+        if (HasAttribute("matrix_brightness"))
+            success |= WriteAttribute("matrix_brightness", brightness.ToString());
+        
+        if (HasAttribute("logo_led_brightness"))
+            success |= WriteAttribute("logo_led_brightness", brightness.ToString());
+            
+        if (HasAttribute("scroll_led_brightness"))
+            success |= WriteAttribute("scroll_led_brightness", brightness.ToString());
+            
+        if (HasAttribute("backlight_led_brightness"))
+            success |= WriteAttribute("backlight_led_brightness", brightness.ToString());
+            
+        if (HasAttribute("left_led_brightness"))
+            success |= WriteAttribute("left_led_brightness", brightness.ToString());
+            
+        if (HasAttribute("right_led_brightness"))
+            success |= WriteAttribute("right_led_brightness", brightness.ToString());
+            
+        if (HasAttribute("set_brightness"))
+            success |= WriteAttribute("set_brightness", brightness.ToString());
+        
+        return success;
     }
 
     // Mouse-specific methods

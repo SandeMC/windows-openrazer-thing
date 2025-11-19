@@ -145,11 +145,14 @@
                             <StackPanel Spacing="5" IsVisible="{Binding SelectedDevice.SupportsPollRate}">
                                 <TextBlock Text="Polling Rate (Hz):" FontWeight="Bold"/>
                                 <Grid ColumnDefinitions="*,Auto">
-                                    <ComboBox Grid.Column="0" SelectedItem="{Binding PollRate}">
-                                        <ComboBoxItem Content="125" Tag="125"/>
-                                        <ComboBoxItem Content="250" Tag="250"/>
-                                        <ComboBoxItem Content="500" Tag="500"/>
-                                        <ComboBoxItem Content="1000" Tag="1000" IsSelected="True"/>
+                                    <ComboBox Grid.Column="0" 
+                                              ItemsSource="{Binding PollRateOptions}"
+                                              SelectedIndex="{Binding SelectedPollRateIndex}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding StringFormat='{}{0} Hz'}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
                                     </ComboBox>
                                     <Button Grid.Column="1" Content="Set Poll Rate" Command="{Binding SetPollRateCommand}" Margin="10,0,0,0"/>
                                 </Grid>

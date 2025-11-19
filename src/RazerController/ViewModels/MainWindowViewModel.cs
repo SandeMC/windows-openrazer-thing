@@ -23,6 +23,43 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isInitialized;
 
+    partial void OnSelectedDeviceChanged(DeviceModel? value)
+    {
+        if (value?.Device != null)
+        {
+            // Load current DPI value if supported
+            if (value.SupportsDPI)
+            {
+                var dpiStr = value.Device.GetDPI();
+                if (!string.IsNullOrEmpty(dpiStr) && int.TryParse(dpiStr, out int currentDpi))
+                {
+                    DpiValue = currentDpi;
+                    Logger.Debug($"Loaded current DPI: {currentDpi}");
+                }
+            }
+            
+            // Load current poll rate if supported
+            if (value.SupportsPollRate)
+            {
+                var pollRateStr = value.Device.GetPollRate();
+                if (!string.IsNullOrEmpty(pollRateStr) && int.TryParse(pollRateStr, out int currentPollRate))
+                {
+                    PollRate = currentPollRate;
+                    // Set the selected index to match the poll rate
+                    for (int i = 0; i < PollRateOptions.Length; i++)
+                    {
+                        if (PollRateOptions[i] == currentPollRate)
+                        {
+                            SelectedPollRateIndex = i;
+                            break;
+                        }
+                    }
+                    Logger.Debug($"Loaded current poll rate: {currentPollRate}");
+                }
+            }
+        }
+    }
+
     [ObservableProperty]
     private string _statusMessage = "Click 'Initialize' to detect Razer devices";
 
@@ -46,6 +83,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private int _pollRate = 1000;
+    
+    [ObservableProperty]
+    private int _selectedPollRateIndex = 3; // Default to 1000 Hz (index 3)
+    
+    public int[] PollRateOptions { get; } = new[] { 125, 250, 500, 1000, 2000, 4000, 8000 };
 
     public Color PreviewColor => Color.FromRgb(RedValue, GreenValue, BlueValue);
 
@@ -186,7 +228,12 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        bool success = SelectedDevice.Device.SetPollRate(PollRate);
-        StatusMessage = success ? $"Set poll rate to {PollRate}Hz" : "Failed to set poll rate";
+        // Get the poll rate from the selected index
+        if (SelectedPollRateIndex >= 0 && SelectedPollRateIndex < PollRateOptions.Length)
+        {
+            int pollRate = PollRateOptions[SelectedPollRateIndex];
+            bool success = SelectedDevice.Device.SetPollRate(pollRate);
+            StatusMessage = success ? $"Set poll rate to {pollRate}Hz" : "Failed to set poll rate";
+        }
     }
 }
