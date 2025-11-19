@@ -17,9 +17,43 @@ sealed class Program
     {
         try
         {
+            // Detect if running as a single file (PublishSingleFile)
+            var processPath = Environment.ProcessPath;
+            var isSingleFile = !string.IsNullOrEmpty(processPath) && 
+                               File.Exists(processPath) &&
+                               Path.GetExtension(processPath).Equals(".exe", StringComparison.OrdinalIgnoreCase);
+            
             // Set up NLog configuration
-            var logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
-            Directory.CreateDirectory(logDirectory);
+            string logDirectory;
+            string logFileName;
+            
+            if (isSingleFile)
+            {
+                // For single-file exe: log next to the exe with the same name
+                var exeDir = Path.GetDirectoryName(processPath);
+                var exeName = Path.GetFileNameWithoutExtension(processPath);
+                logDirectory = exeDir ?? AppDomain.CurrentDomain.BaseDirectory;
+                logFileName = Path.Combine(logDirectory, $"{exeName}.log");
+                
+                // Update NLog configuration to use the exe name for logging
+                var config = LogManager.Configuration;
+                if (config != null)
+                {
+                    var fileTarget = config.FindTargetByName<NLog.Targets.FileTarget>("logfile");
+                    if (fileTarget != null)
+                    {
+                        fileTarget.FileName = logFileName;
+                        fileTarget.ArchiveFileName = Path.Combine(logDirectory, $"{exeName}-{{#}}.log");
+                    }
+                    LogManager.Configuration = config;
+                }
+            }
+            else
+            {
+                // For folder structure: use logs subdirectory
+                logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                Directory.CreateDirectory(logDirectory);
+            }
             
             // Check if DEBUG file exists to enable debug logging
             var debugFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DEBUG");

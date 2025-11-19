@@ -43,7 +43,7 @@ public class TrayIconService
             {
                 // Try to load icon from file in Assets folder
                 string appDir = AppDomain.CurrentDomain.BaseDirectory;
-                string iconPath = Path.Combine(appDir, "Assets", "avalonia-logo.ico");
+                string iconPath = Path.Combine(appDir, "Assets", "logo.ico");
                 
                 if (File.Exists(iconPath))
                 {
