@@ -3,7 +3,7 @@
 > [!CAUTION]
 > **THIS APPLICATION IS AN AI-MADE PROOF OF CONCEPT**
 > 
-> This is a proof-of-concept application that has been **entirely vibecoded** (excluding existing libraries - such as [openrazer-win32](https://github.com/tpoechtrager/openrazer-win32) - which are a base for this application. It may not work correctly, and **will likely not be maintained**. It does support some features, but use at your own risk.
+> This is a proof-of-concept application that has been **entirely vibecoded** (excluding existing libraries - such as [openrazer-win32](https://github.com/tpoechtrager/openrazer-win32) - which are a base for this application). It may not work correctly, and **will likely not be maintained**. It does support some features, but use at your own risk.
 >
 > **Key Limitations:**
 > - Device driver code and database cutoff: **May 23, 2025**
@@ -14,6 +14,11 @@
 ## About
 
 A Windows application for controlling Razer devices without Synapse, using the open-source OpenRazer Win32 driver port. Built with C# .NET 9 and Avalonia UI.
+
+## Screenshots
+<img width="1920" height="1027" alt="image" src="https://github.com/user-attachments/assets/ef3712ed-2970-4d49-a7c9-1b9b393e38a7" />
+<img width="1920" height="1027" alt="image" src="https://github.com/user-attachments/assets/63ab488e-b699-44d9-8299-1a8c3bc42b03" />
+
 
 ## Features
 
@@ -47,10 +52,6 @@ A Windows application for controlling Razer devices without Synapse, using the o
 
 ### System Integration
 - System tray icon for quick access to the app
-
-## Screenshots
-<img width="1920" height="1027" alt="image" src="https://github.com/user-attachments/assets/936643fe-0daf-4e1b-9a07-d3237129d5e8" />
-<img width="1920" height="1027" alt="image" src="https://github.com/user-attachments/assets/c5bb3ae2-8c67-47ef-9721-b17d6cab594a" />
 
 ## Requirements
 
