@@ -1,0 +1,71 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:RazerController.Views"
+        x:Class="RazerController.Views.ColorPickerDialog"
+        x:CompileBindings="False"
+        Title="Select Color"
+        Width="420" Height="480"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
+        <!-- Title -->
+        <TextBlock Grid.Row="0" Text="Select a Color" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+        
+        <!-- Current Color Preview -->
+        <Border Grid.Row="1" 
+                Name="ColorPreview"
+                Height="50"
+                BorderBrush="Gray" 
+                BorderThickness="2" 
+                CornerRadius="5"
+                Margin="0,0,0,15">
+        </Border>
+        
+        <!-- Color Palette -->
+        <ScrollViewer Grid.Row="2" 
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <ItemsControl Name="ColorPalette">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="40" Height="40" 
+                                Margin="2"
+                                BorderBrush="Gray"
+                                BorderThickness="1"
+                                CornerRadius="3"
+                                Cursor="Hand"
+                                PointerPressed="ColorButton_PointerPressed"
+                                ToolTip.Tip="{Binding Name}">
+                            <Border.Background>
+                                <SolidColorBrush Color="{Binding Color}"/>
+                            </Border.Background>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="3" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Spacing="10"
+                    Margin="0,15,0,0">
+            <Button Content="OK" 
+                    Width="80" 
+                    Click="OK_Click"
+                    IsDefault="True"/>
+            <Button Content="Cancel" 
+                    Width="80" 
+                    Click="Cancel_Click"
+                    IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+    
+</Window>
