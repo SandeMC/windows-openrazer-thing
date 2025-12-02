@@ -7,7 +7,7 @@
 >
 > **Key Limitations:**
 > - Device driver code and database cutoff: **May 23, 2025**
-> - Only tested with: **Razer DeathAdder V3** and **Razer DeathAdder Essential 2021**
+> - Only tested with: **Razer DeathAdder V3**, **Razer DeathAdder Essential 2021** and **Razer Bazilisk X HyperSpeed**
 > - Only designed for mice. Most features untested due to lack of hardware ownership.
 > - RGB support very rudimentary. Use [OpenRGB](https://openrgb.org) instead.
 
