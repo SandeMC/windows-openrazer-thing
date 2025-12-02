@@ -622,10 +622,12 @@ public class RazerDevice
         try
         {
             string? levelStr = ReadAttribute("charge_level");
-            if (!string.IsNullOrEmpty(levelStr) && int.TryParse(levelStr, out int level))
+            if (!string.IsNullOrEmpty(levelStr) && int.TryParse(levelStr, out int rawLevel))
             {
-                Logger.Debug($"Battery level: {level}%");
-                return level;
+                // Raw value is 0-255, convert to percentage (0-100)
+                int percentage = (int)Math.Round(rawLevel / 255.0 * 100.0);
+                Logger.Debug($"Battery level: raw={rawLevel}, percentage={percentage}%");
+                return percentage;
             }
         }
         catch (Exception ex)
@@ -635,29 +637,41 @@ public class RazerDevice
         return null;
     }
 
-    public string? GetBatteryStatus()
+    private int? TryGetChargeStatusCode()
     {
         try
         {
             string? status = ReadAttribute("charge_status");
-            if (!string.IsNullOrEmpty(status))
+            if (!string.IsNullOrEmpty(status) && int.TryParse(status.Trim(), out int statusCode))
             {
-                Logger.Debug($"Battery status: {status}");
-                return status.Trim();
+                return statusCode;
             }
         }
         catch (Exception ex)
         {
-            Logger.Debug(ex, "Error reading battery status");
+            Logger.Debug(ex, "Error reading charge status");
+        }
+        return null;
+    }
+
+    public string? GetBatteryStatus()
+    {
+        int? statusCode = TryGetChargeStatusCode();
+        if (statusCode.HasValue)
+        {
+            // Status code: 0 = not charging (discharging), 1 = charging
+            string statusText = statusCode.Value == 1 ? "Charging" : "Discharging";
+            Logger.Debug($"Battery status: raw={statusCode.Value}, text={statusText}");
+            return statusText;
         }
         return null;
     }
 
     public bool GetIsCharging()
     {
-        string? status = GetBatteryStatus();
-        return status != null && (status.Contains("charging", StringComparison.OrdinalIgnoreCase) || 
-                                   status.Contains("full", StringComparison.OrdinalIgnoreCase));
+        int? statusCode = TryGetChargeStatusCode();
+        // Status code: 0 = not charging, 1 = charging
+        return statusCode.HasValue && statusCode.Value == 1;
     }
 
     public IReadOnlyDictionary<string, DeviceAttribute> GetAllAttributes() => _attributes;
